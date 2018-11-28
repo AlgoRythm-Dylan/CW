@@ -1,10 +1,14 @@
 #ifndef CW_H
 #define CW_H
 
+#include <vector>
+
 namespace CW {
 
 	void init();
 	void end();
+	int screenWidth(); // Functions for now. extern ints in the future when event system is implemented
+	int screenHeight();
 
 	long sleep(long);
 
@@ -25,13 +29,12 @@ namespace CW {
 	const char UNIT_PERCENT = '%';
 
 	struct Unit {
-		double value;
+		double value, derivedValue;
 		char type;
 		Unit(); // Empty constructor
 		Unit(double, char); // value, type
 		void operator =(double);
-		double derive(); // Derive from stdscr
-		double derive(int); // Derive given max
+		void derive(double); // Derive given max
 	};
 
 	struct ColorPair {
@@ -53,9 +56,17 @@ namespace CW {
 		void update();
 	}
 
+	// Forwards declaration for a class which references itself
+	struct Widget;
+
 	struct Widget {
 		Unit x, y, width, height;
+		Widget();
 		void render();
+		void render(const Box&);
+		void inflate();
+		Widget* parent;
+		std::vector<Widget*> children;
 	};
 
 }

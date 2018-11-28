@@ -9,7 +9,7 @@ int main(){
 	sleep(1000);
 	init();
 	ColorPair cp;
-	Draw::rect(1, 1, 5, 10, cp);
+	Draw::line(1, 1, 45, 10, cp);
 	Draw::update();
 	sleep(5000);
 	end();

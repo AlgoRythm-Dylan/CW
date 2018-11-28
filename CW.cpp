@@ -12,6 +12,18 @@ namespace CW {
 		endwin();
 	}
 
+	int screenWidth(){
+		int x, y;
+		getmaxyx(stdscr, y, x); // Fucking unused variables. Make a coord struct for fucks sake
+		return x;
+	}
+
+	int screenHeight(){
+		int x, y;
+		getmaxyx(stdscr, y, x);
+		return y;
+	}
+
 	// Sleep for n milliseconds and recieve any milliseconds not slept
 	long sleep(long milliseconds){
 		timespec t1, t2;
@@ -48,6 +60,17 @@ namespace CW {
 		this->type = type;
 	}
 
+	void Unit::derive(double max){
+		if(type == 'C'){
+			// Cell calculation. Value is derived already
+			derivedValue = value;
+		}
+		else if(type == '%'){
+			// Percentage calculation. Simple, but still must be derived
+			derivedValue = (value / 100.0) * max;
+		}	
+	}
+
 	void Unit::operator=(double value){
 		this->value = value;
 	}
@@ -58,11 +81,21 @@ namespace CW {
 			mvaddch(y, x, character);
 		}
 
+		void line(int x1, int y1, int x2, int y2, ColorPair &color){
+			int dx = x2 - x1;
+			int dy = y2 - y1;
+			int i = x1;
+			while(i < x2){
+				mvaddch(y1 + dy * (i - x1) / dx, i, 'X');
+				i++;
+			}
+		}
+
 		void rect(int x, int y, int width, int height, ColorPair &color){
 			int i = 0, j = 0;
 			while(i < height){
 				while(j < width){
-					mvaddch(i, j, 'X');
+					mvaddch(y + i, x + j, 'X');
 					j++;
 				}
 				j = 0;
@@ -74,6 +107,27 @@ namespace CW {
 			refresh();
 		}
 
+	}
+
+	Widget::Widget(){
+		inflate(); // Inflate the widget according to the size of stdscr
+	}
+
+	void Widget::inflate(){
+		// Derive all values, split text into lines, size buffers, etc
+		x.derive(screenWidth());
+		y.derive(screenHeight());
+		width.derive(screenWidth());
+		height.derive(screenHeight());
+	}
+
+	void Widget::render(){
+		// For self-placement
+	}
+
+	void Widget::render(const Box &box){
+		// Second step of self-placement, but more importantly,
+		// allows parent widgets (such as grids) to control layout and size
 	}
 
 }
