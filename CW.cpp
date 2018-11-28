@@ -23,6 +23,20 @@ namespace CW {
 		nanosleep(&t1, &t2);
 		return (t2.tv_sec * 1000) + (t2.tv_nsec / 1000000);
 	}
+	
+	Box::Box(){
+		x = 0;
+		y = 0;
+		width = 0;
+		height = 0;
+	}
+
+	Box::Box(int x, int y, int width, int height){
+		this->x = x;
+		this->y = y;
+		this->width = width;
+		this->height = height;
+	}
 
 	Unit::Unit(){
 		value = 0;
@@ -36,6 +50,30 @@ namespace CW {
 
 	void Unit::operator=(double value){
 		this->value = value;
+	}
+
+	namespace Draw {
+		
+		void point(int x, int y, int character, ColorPair &color){
+			mvaddch(y, x, character);
+		}
+
+		void rect(int x, int y, int width, int height, ColorPair &color){
+			int i = 0, j = 0;
+			while(i < height){
+				while(j < width){
+					mvaddch(i, j, 'X');
+					j++;
+				}
+				j = 0;
+				i++;
+			}
+		}
+
+		void update(){
+			refresh();
+		}
+
 	}
 
 }

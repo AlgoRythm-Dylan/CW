@@ -30,7 +30,8 @@ namespace CW {
 		Unit(); // Empty constructor
 		Unit(double, char); // value, type
 		void operator =(double);
-		double derive();
+		double derive(); // Derive from stdscr
+		double derive(int); // Derive given max
 	};
 
 	struct ColorPair {
@@ -41,17 +42,20 @@ namespace CW {
 	namespace Draw {
 		// Place a single character
 		// x, y, char, Color
-		void place(int, int, int, ColorPair);
+		void point(int, int, int, ColorPair&);
 		// Draw a line
 		// x1, y1, x2, y1, Color
-		void line(int, int, int, int, ColorPair);
+		void line(int, int, int, int, ColorPair&);
 		// Draw  rect
 		// x, y, width, height, color
-		void rect(int, int, int, int, ColorPair);
+		void rect(int, int, int, int, ColorPair&);
+		// Update the screen
+		void update();
 	}
 
 	struct Widget {
 		Unit x, y, width, height;
+		void render();
 	};
 
 }

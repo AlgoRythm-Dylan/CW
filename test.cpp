@@ -8,6 +8,9 @@ int main(){
 	std::cout << u.value << std::endl;
 	sleep(1000);
 	init();
+	ColorPair cp;
+	Draw::rect(1, 1, 5, 10, cp);
+	Draw::update();
 	sleep(5000);
 	end();
 	return 0;
