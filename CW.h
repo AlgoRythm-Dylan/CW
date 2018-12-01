@@ -19,8 +19,9 @@ namespace CW {
 		void values(int, int, int, int);
 	};
 
-	const char UNIT_CELL = 'C';
-	const char UNIT_PERCENT = '%';
+	const char UNIT_CELL = 'C'; // Cell
+	const char UNIT_PERCENT = '%'; // Percentage of available space
+	const char UNIT_AUTO = 'A'; // Automatically fill space as needed (ignores value)
 
 	struct Unit {
 		double value, derivedValue;
@@ -81,10 +82,32 @@ namespace CW {
 		virtual void render();
 		virtual void render(const Box&);
 		virtual void inflate();
+		virtual void addChild(Widget*);
 		Widget* parent;
 		Box boundingBox;
 		std::vector<Widget*> children;
 		ColorPair color;
+	};
+
+	const char UNIT_GRID = '*'; // Fill available space. Unique to grid layouts
+
+	struct GridDefinition {
+		double value;
+		char type;
+		GridDefinition();
+		GridDefinition(double, char);
+	};
+
+	struct Grid : Widget {
+		std::vector<GridDefinition> columns, rows;
+		virtual void render();
+		virtual void render(const Box&);
+		virtual void inflate();
+		virtual void addChild(Widget*);
+		void addColumnDefinition(GridDefinition&);
+		void addRowDefinition(GridDefinition&);
+		// Determine if odd or even amount of cells needed to render
+		static int oddOrEven(std::vector<GridDefinition>&);
 	};
 
 	// Extern variables

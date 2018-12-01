@@ -277,6 +277,25 @@ namespace CW {
 		Draw::update();
 	}
 
+	void Widget::addChild(Widget *widget){
+		children.push_back(widget);
+	}
+
+	void Grid::render(){
+		render(boundingBox);
+	}
+
+	void Grid::render(const Box &box){
+
+	};
+
+	int Grid::oddOrEven(std::vector<GridDefinition>& gridTemplate){
+		
+	}
+
+	void Grid::inflate(){};
+	void Grid::addChild(Widget *widget){};
+
 	// Externs
 	std::vector<int> usedColors;
 	std::vector<int> usedPairs;
