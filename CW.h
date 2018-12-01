@@ -98,6 +98,10 @@ namespace CW {
 		GridDefinition(double, char);
 	};
 
+	const int GRID_ODD = -1; // Even amount of cells needed to render the grid
+	const int GRID_EITHER = 0; // Only one grid region; any amount of cell will do
+	const int GRID_EVEN = 1; // Odd amount of cells needed to render the grid
+
 	struct Grid : Widget {
 		std::vector<GridDefinition> columns, rows;
 		virtual void render();
