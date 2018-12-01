@@ -6,6 +6,17 @@ namespace CW {
 
 	void init(){
 		initscr();
+		start_color();
+		use_default_colors();
+		BLACK = Color(0);
+		RED = Color(1);
+		GREEN = Color(2);
+		YELLOW = Color(3);
+		BLUE = Color(4);
+		MAGENTA = Color(5);
+		CYAN = Color(6);
+		WHITE = Color(7);
+		curs_set(0);
 	}
 
 	void end(){
@@ -36,6 +47,93 @@ namespace CW {
 		return (t2.tv_sec * 1000) + (t2.tv_nsec / 1000000);
 	}
 	
+	Color::Color(){
+		id = -1; // Default color id
+	}
+
+	Color::Color(int id){
+		this->id = id;
+	}
+
+	Color::Color(short r, short g, short b){
+		id = -2; // Invalid color id (Flag to assign one)
+		this->r = r;
+		this->g = g;
+		this->b = b;
+	}
+
+	void Color::activate(){
+		if(id == -2){
+			id = nextid();
+		}
+		init_color(id, 
+			cv255to1000(r),
+			cv255to1000(g),
+			cv255to1000(b)
+		);
+	}
+
+	short Color::cv255to1000(short num){
+		return (short)(1000.0 * ((double) num / 255.0));
+	}
+
+	short Color::cv1000to255(short num){
+		return (short)(255.0 * ((double) num / 1000.0 ));
+	}
+
+	ColorPair::ColorPair(){
+		id = 0; // Default color pair id
+	}
+
+	ColorPair::ColorPair(Color& foreground, Color& background){
+		id = -1; // Invalid color pair id (Flag to assign one)
+		this->foreground = &foreground;
+		this->background = &background;
+		activate();
+	}
+
+	int Color::nextid(){
+		int i = 8; // Start after the 8 ASCII colors
+		while(i < COLORS){
+			int j = 0;
+			while(j < usedColors.size()){
+				if(usedColors[j] == i){
+					i++;
+					continue;
+				}
+				j++;
+			}
+			usedColors.push_back(i);
+			return i;
+		}
+		return -1;
+	}
+
+	void ColorPair::activate(){
+		if(id == -1){
+			id = nextid();
+		}
+		init_pair(id, foreground->id, background->id);
+	}
+
+	int ColorPair::nextid(){
+		int i = 1; // Start at 1, which is the first available color pair
+		// Find the smallest avaialable number, reserve it, and return it
+		while(i < COLOR_PAIRS){
+			int j = 0;
+			while(j < usedPairs.size()){
+				if(usedPairs[j] == i){
+					i++;
+					continue; // The pair is in the list, and thus, is in use
+				}
+				j++;
+			}
+			usedPairs.push_back(i); // Reserve this color pair
+			return i; // The pair was not in the list, and is available
+		}
+		return -1; // No more colors available :(
+	}
+
 	Box::Box(){
 		x = 0;
 		y = 0;
@@ -50,9 +148,17 @@ namespace CW {
 		this->height = height;
 	}
 
+	void Box::values(int x, int y, int width, int height){
+		this->x = x;
+		this->y = y;
+		this->width = width;
+		this->height = height;
+	}
+
 	Unit::Unit(){
 		value = 0;
-		type = 'C';
+		derivedValue = 0;
+		type = UNIT_CELL;
 	}
 
 	Unit::Unit(double value, char type){
@@ -61,11 +167,11 @@ namespace CW {
 	}
 
 	void Unit::derive(double max){
-		if(type == 'C'){
+		if(type == UNIT_CELL){
 			// Cell calculation. Value is derived already
 			derivedValue = value;
 		}
-		else if(type == '%'){
+		else if(type == UNIT_PERCENT){
 			// Percentage calculation. Simple, but still must be derived
 			derivedValue = (value / 100.0) * max;
 		}	
@@ -73,6 +179,32 @@ namespace CW {
 
 	void Unit::operator=(double value){
 		this->value = value;
+	}
+
+	CalculatedUnit::CalculatedUnit(){
+		u1 = new Unit();
+		u2 = new Unit();
+		type = '-';
+	}
+
+	CalculatedUnit::CalculatedUnit(Unit *u1, char type, Unit *u2){
+		this->u1 = u1;
+		this->type = type;
+		this->u2 = u2;
+	}
+
+	void CalculatedUnit::derive(double max){
+		u1->derive(max);
+		u2->derive(max);
+		if(type == '-'){
+			derivedValue = u1->derivedValue - u2->derivedValue;
+		}
+		else if(type == '+'){
+			derivedValue = u1->derivedValue + u2->derivedValue;
+		}
+		else{
+			derivedValue = 0; // Dunno what to do, so here's a 0 for you.
+		}
 	}
 
 	namespace Draw {
@@ -86,16 +218,17 @@ namespace CW {
 			int dy = y2 - y1;
 			int i = x1;
 			while(i < x2){
-				mvaddch(y1 + dy * (i - x1) / dx, i, 'X');
+				mvaddch(y1 + dy * (i - x1) / dx, i, ' ');
 				i++;
 			}
 		}
 
 		void rect(int x, int y, int width, int height, ColorPair &color){
+			attron(COLOR_PAIR(color.id));
 			int i = 0, j = 0;
 			while(i < height){
 				while(j < width){
-					mvaddch(y + i, x + j, 'X');
+					mvaddch(y + i, x + j, ' ');
 					j++;
 				}
 				j = 0;
@@ -110,24 +243,44 @@ namespace CW {
 	}
 
 	Widget::Widget(){
+		x = new Unit();
+		y = new Unit();
+		width = new Unit();
+		height = new Unit();
 		inflate(); // Inflate the widget according to the size of stdscr
 	}
 
 	void Widget::inflate(){
 		// Derive all values, split text into lines, size buffers, etc
-		x.derive(screenWidth());
-		y.derive(screenHeight());
-		width.derive(screenWidth());
-		height.derive(screenHeight());
+		x->derive(screenWidth());
+		y->derive(screenHeight());
+		width->derive(screenWidth());
+		height->derive(screenHeight());
+		// Update the bounding box
+		boundingBox.values(
+				(int) x->derivedValue,
+				(int) y->derivedValue,
+				(int) width->derivedValue,
+			       	(int) height->derivedValue
+		);
 	}
 
 	void Widget::render(){
 		// For self-placement
+		render(boundingBox);
 	}
 
 	void Widget::render(const Box &box){
 		// Second step of self-placement, but more importantly,
 		// allows parent widgets (such as grids) to control layout and size
+		Draw::rect(box.x, box.y, box.width, box.height, color);
+		Draw::update();
 	}
+
+	// Externs
+	std::vector<int> usedColors;
+	std::vector<int> usedPairs;
+	ColorPair defaultColorPair;
+	Color BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE;
 
 }

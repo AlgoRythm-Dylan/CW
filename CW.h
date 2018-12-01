@@ -12,17 +12,11 @@ namespace CW {
 
 	long sleep(long);
 
-	struct Color {
-		int id;
-		Color(); // Empty constructor
-		Color(int); // Construct by color ID
-		Color(short, short, short); // Construct by r, g, b
-	};
-
 	struct Box {
 		int x, y, width, height;
 		Box(); // Empty constructor
 		Box(int, int, int, int); // x, y, width, height
+		void values(int, int, int, int);
 	};
 
 	const char UNIT_CELL = 'C';
@@ -32,14 +26,39 @@ namespace CW {
 		double value, derivedValue;
 		char type;
 		Unit(); // Empty constructor
-		Unit(double, char); // value, type
-		void operator =(double);
-		void derive(double); // Derive given max
+		Unit(double, char);
+		virtual void derive(double); // Derive given max
+		virtual void operator=(double); // Set value using =
+	};
+
+	struct CalculatedUnit : Unit {
+		Unit *u1, *u2;
+		CalculatedUnit();
+		CalculatedUnit(Unit*, char, Unit*);
+		virtual void derive(double);
+	};
+
+	struct Color {
+		int id;
+		short r, g, b;
+		Color(); // Empty constructor
+		Color(int); // Construct by color ID
+		Color(short, short, short); // Construct by r, g, b
+		void activate();
+		static int nextid();
+	private:
+		// Helper functions for interfacing with ncurses.
+		static short cv1000to255(short); // Convert 1000-based colors to 255-based colors
+		static short cv255to1000(short); // Convert 255-based colors to 1000-based colors
 	};
 
 	struct ColorPair {
 		int id;
-		Color *color1, *color2;
+		Color *foreground, *background;
+		ColorPair();
+		ColorPair(Color&, Color&);
+		void activate();
+		static int nextid();
 	};
 
 	namespace Draw {
@@ -56,21 +75,24 @@ namespace CW {
 		void update();
 	}
 
-	// Forwards declaration for a class which references itself
-	struct Widget;
-
 	struct Widget {
-		Unit x, y, width, height;
+		Unit *x, *y, *width, *height;
 		Widget();
-		void render();
-		void render(const Box&);
-		void inflate();
+		virtual void render();
+		virtual void render(const Box&);
+		virtual void inflate();
 		Widget* parent;
+		Box boundingBox;
 		std::vector<Widget*> children;
+		ColorPair color;
 	};
 
+	// Extern variables
+	extern std::vector<int> usedColors;
+	extern std::vector<int> usedPairs;
+	extern ColorPair defaultColorPair;
+	extern Color BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE;
+
 }
-
-
 
 #endif
