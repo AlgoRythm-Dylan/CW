@@ -7,7 +7,7 @@ namespace CW {
 
 	void init();
 	void end();
-	int screenWidth(); // Functions for now. extern ints in the future when event system is implemented
+	int screenWidth(); // Functions. extern ints in the future when event system is implemented
 	int screenHeight();
 
 	long sleep(long);
@@ -119,6 +119,8 @@ namespace CW {
 	extern std::vector<int> usedPairs;
 	extern ColorPair defaultColorPair;
 	extern Color BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE;
+	extern int fps, screenWidth, screenHeight, running;
+	extern Widget body;
 
 }
 

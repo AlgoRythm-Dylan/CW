@@ -5,9 +5,15 @@
 namespace CW {
 
 	void init(){
+		// Interface with ncurses
 		initscr();
 		start_color();
 		use_default_colors();
+		keypad(1);
+		cbreak();
+		noecho();
+		nodelay(stdscr, 1);
+		// Set up the ASCII colors
 		BLACK = Color(0);
 		RED = Color(1);
 		GREEN = Color(2);
@@ -16,23 +22,31 @@ namespace CW {
 		MAGENTA = Color(5);
 		CYAN = Color(6);
 		WHITE = Color(7);
+		// Make the cursor invisible initially
 		curs_set(0);
+		// Set up the body
+		body.width->value = 100.0;
+		body.width->type = UNIT_PERCENT;
+		body.height->value = 100.0;
+		body.height->type = UNIT_PERCENT;
+	}
+
+	void loop(int targetfps){
+		fps = targetfps;
+		int sleepAmount = 1000 / fps;
+		running = 1;
+		while(running){
+			body.render();
+			sleep(sleepAmount);
+		}
 	}
 
 	void end(){
 		endwin();
 	}
 
-	int screenWidth(){
-		int x, y;
-		getmaxyx(stdscr, y, x); // Fucking unused variables. Make a coord struct for fucks sake
-		return x;
-	}
-
-	int screenHeight(){
-		int x, y;
-		getmaxyx(stdscr, y, x);
-		return y;
+	int updateScreenSize(){
+		getmaxyx(stdscr, screenHeight, screenWidth);
 	}
 
 	// Sleep for n milliseconds and recieve any milliseconds not slept
@@ -131,7 +145,7 @@ namespace CW {
 			usedPairs.push_back(i); // Reserve this color pair
 			return i; // The pair was not in the list, and is available
 		}
-		return -1; // No more colors available :(
+		return -1; // No more color pairs available :(
 	}
 
 	Box::Box(){
@@ -364,5 +378,7 @@ namespace CW {
 	std::vector<int> usedPairs;
 	ColorPair defaultColorPair;
 	Color BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE;
+	int fps, screenWidth, screenHeight;
+	Widget body;
 
 }
