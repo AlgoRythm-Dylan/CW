@@ -9,7 +9,7 @@ namespace CW {
 		initscr();
 		start_color();
 		use_default_colors();
-		keypad(1);
+		keypad(stdscr, 1);
 		cbreak();
 		noecho();
 		nodelay(stdscr, 1);
@@ -266,10 +266,10 @@ namespace CW {
 
 	void Widget::inflate(){
 		// Derive all values, split text into lines, size buffers, etc
-		x->derive(screenWidth());
-		y->derive(screenHeight());
-		width->derive(screenWidth());
-		height->derive(screenHeight());
+		x->derive(screenWidth);
+		y->derive(screenHeight);
+		width->derive(screenWidth);
+		height->derive(screenHeight);
 		// Update the bounding box
 		boundingBox.values(
 				(int) x->derivedValue,

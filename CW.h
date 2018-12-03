@@ -7,8 +7,6 @@ namespace CW {
 
 	void init();
 	void end();
-	int screenWidth(); // Functions. extern ints in the future when event system is implemented
-	int screenHeight();
 
 	long sleep(long);
 
