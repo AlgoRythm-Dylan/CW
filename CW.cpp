@@ -1,6 +1,7 @@
 #include "CW.h"
 #include <time.h>
 #include <ncurses.h>
+#include <stdio.h>
 
 namespace CW {
 
@@ -13,6 +14,10 @@ namespace CW {
 		cbreak();
 		noecho();
 		nodelay(stdscr, 1);
+		mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+		// Some raw stuff
+		printf("\033[?1003h\n");
+		fflush(stdout);
 		// Set up the ASCII colors
 		BLACK = Color(0);
 		RED = Color(1);
@@ -29,6 +34,12 @@ namespace CW {
 		body.width->type = UNIT_PERCENT;
 		body.height->value = 100.0;
 		body.height->type = UNIT_PERCENT;
+		// Setup loop
+		running = 0;
+	}
+
+	void loop(){
+		loop(30);
 	}
 
 	void loop(int targetfps){
@@ -36,12 +47,42 @@ namespace CW {
 		int sleepAmount = 1000 / fps;
 		running = 1;
 		while(running){
+			dispatchEvents();
 			body.render();
 			sleep(sleepAmount);
 		}
 	}
 
+	void stopLoop(){
+		running = false;
+	}
+
+	void dispatchEvents(){
+		int ch = getch();
+		while(ch != ERR){
+			if(ch == KEY_RESIZE){
+				// Generate and dispatch a resize event
+			}
+			else if(ch == KEY_MOUSE){
+				MEVENT me;
+				if(getmouse(&me) == OK){
+					if(me.bstate == REPORT_MOUSE_POSITION){
+						ColorPair cp;
+						Draw::point(me.x, me.y, 'x', cp);
+						Draw::update();
+					}
+				}
+			}
+			else if(ch == 'f'){
+				stopLoop();
+			}
+			ch = getch();
+		}
+	}
+
 	void end(){
+		printf("\033[?1000h");
+		fflush(stdout);
 		endwin();
 	}
 
@@ -378,7 +419,7 @@ namespace CW {
 	std::vector<int> usedPairs;
 	ColorPair defaultColorPair;
 	Color BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE;
-	int fps, screenWidth, screenHeight;
+	int fps, screenWidth, screenHeight, running;
 	Widget body;
 
 }

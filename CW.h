@@ -7,6 +7,10 @@ namespace CW {
 
 	void init();
 	void end();
+	void loop();
+	void loop(int);
+	void stopLoop();
+	void dispatchEvents();
 
 	long sleep(long);
 
@@ -110,6 +114,25 @@ namespace CW {
 		void addRowDefinition(GridDefinition&);
 		// Determine if odd or even amount of cells needed to render
 		static int oddOrEven(std::vector<GridDefinition>&);
+	};
+
+	// Event system
+
+	const int EVENT_RESIZE = 0;
+	const int MOUSE = 1;
+	const int MOUSE_MOVE = 2;
+
+	struct Event {
+		int type;
+		int x, y;
+	};
+
+	struct MouseEvent : Event {
+		int state;
+	};
+
+	struct KeyEvent : Event {
+		int key;
 	};
 
 	// Extern variables
