@@ -15,6 +15,9 @@ namespace CW {
 		noecho();
 		nodelay(stdscr, 1);
 		mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+		// This will need to be played with and will be different from
+		// emulator to emulator and system to system
+		mouseinterval(75);
 		// Some raw stuff
 		printf("\033[?1003h\n");
 		fflush(stdout);
@@ -62,19 +65,28 @@ namespace CW {
 		while(ch != ERR){
 			if(ch == KEY_RESIZE){
 				// Generate and dispatch a resize event
+				// Can only get screen size at current time afaik
+				updateScreenSize();
+				ResizeEvent e(screenWidth, screenHeight);
+				// TODO: Dispatch it to the body
 			}
 			else if(ch == KEY_MOUSE){
 				MEVENT me;
 				if(getmouse(&me) == OK){
-					if(me.bstate == REPORT_MOUSE_POSITION){
-						ColorPair cp;
-						Draw::point(me.x, me.y, 'x', cp);
-						Draw::update();
+					MouseEvent e;
+					e.x = me.x;
+					e.y = me.y;
+					if(me.bstate = REPORT_MOUSE_MOVEMENT){
+						e.type = EVENT_MOUSE_MOVE;
 					}
+					// TODO: Finish and dispatch to body
 				}
 			}
 			else if(ch == 'f'){
 				stopLoop();
+			}
+			else{
+				// TODO: Dispatch key event to body
 			}
 			ch = getch();
 		}
@@ -413,6 +425,64 @@ namespace CW {
 
 	void Grid::inflate(){};
 	void Grid::addChild(Widget *widget){};
+
+	Event::Event(){
+		type = -1; // Invalid type
+		x = -1;
+		y = -1;
+	}
+
+	Event(int type){
+		this->type = type;
+		x = -1;
+		y = -1;
+	}
+
+	Event(int type, int x, int y){
+		this->type = type;
+		this->x = x;
+		this->y = y;
+	}
+
+	MouseEvent::MouseEvent(){
+		type = EVENT_MOUSE;
+		count = 0;
+		x = -1;
+		y = -1;
+	}
+
+	MouseEvent::MouseEvent(int type){
+		this->type = type;
+		count = 0;
+		x = -1;
+		y = -1;
+	}
+
+	MouseEvent::MouseEvent(int type, int x, int y){
+		this->type = type;
+		count = 0;
+		this->x = x;
+		this->y = y;
+	}
+
+	MouseEvent::MouseEvent(int type, int x, int y, int count){
+		this->type = type;
+		this->count = count;
+		this->x = x;
+		this->y = y;
+	}
+
+	ResizeEvent::ResizeEvent(){
+		type = EVENT_RESIZE;
+		x = 0;
+		y = 0;
+	}
+
+	ResizeEvent::ResizeEvent(int x, int y){
+		type = EVENT_RESIZE;
+		this->x = x;
+		this->y = y;
+	}
 
 	// Externs
 	std::vector<int> usedColors;

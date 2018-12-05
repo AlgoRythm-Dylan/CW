@@ -119,8 +119,11 @@ namespace CW {
 	// Event system
 
 	const int EVENT_RESIZE = 0;
-	const int MOUSE = 1;
-	const int MOUSE_MOVE = 2;
+	const int EVENT_MOUSE = 1;
+	const int EVENT_MOUSE_MOVE = 2;
+	const int EVENT_MOUSE_DOWN = 3;
+	const int EVENT_MOUSE_UP = 4;
+	const int EVENT_MOUSE_CLICK = 5;
 
 	struct Event {
 		int type;
@@ -129,6 +132,7 @@ namespace CW {
 
 	struct MouseEvent : Event {
 		int state;
+		int count;
 	};
 
 	struct KeyEvent : Event {
