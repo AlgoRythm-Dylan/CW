@@ -78,6 +78,37 @@ namespace CW {
 		void update();
 	}
 
+	// Event system
+
+	const int EVENT_RESIZE = 0;
+	const int EVENT_MOUSE = 1;
+	const int EVENT_MOUSE_MOVE = 2;
+	const int EVENT_MOUSE_DOWN = 3;
+	const int EVENT_MOUSE_UP = 4;
+	const int EVENT_MOUSE_CLICK = 5;
+
+	struct Event {
+		int type;
+		int x, y;
+		Event();
+		Event(int);
+		Event(int, int, int);
+	};
+
+	struct MouseEvent : Event {
+		int state;
+		int count;
+		MouseEvent();
+		MouseEvent(int);
+		MouseEvent(int, int, int);
+	};
+
+	struct KeyEvent : Event {
+		int key;
+		KeyEvent();
+		KeyEvent(int);
+	};
+
 	struct Widget {
 		Unit *x, *y, *width, *height;
 		Widget();
@@ -89,6 +120,9 @@ namespace CW {
 		Box boundingBox;
 		std::vector<Widget*> children;
 		ColorPair color;
+		void handleEvent(Event&);
+		void handleMouseEvent(MouseEvent&);
+		void handleKeyEvent(KeyEvent&);
 	};
 
 	const char UNIT_GRID = '*'; // Fill available space. Unique to grid layouts
@@ -114,29 +148,6 @@ namespace CW {
 		void addRowDefinition(GridDefinition&);
 		// Determine if odd or even amount of cells needed to render
 		static int oddOrEven(std::vector<GridDefinition>&);
-	};
-
-	// Event system
-
-	const int EVENT_RESIZE = 0;
-	const int EVENT_MOUSE = 1;
-	const int EVENT_MOUSE_MOVE = 2;
-	const int EVENT_MOUSE_DOWN = 3;
-	const int EVENT_MOUSE_UP = 4;
-	const int EVENT_MOUSE_CLICK = 5;
-
-	struct Event {
-		int type;
-		int x, y;
-	};
-
-	struct MouseEvent : Event {
-		int state;
-		int count;
-	};
-
-	struct KeyEvent : Event {
-		int key;
 	};
 
 	// Extern variables

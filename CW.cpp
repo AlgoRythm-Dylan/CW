@@ -68,7 +68,7 @@ namespace CW {
 				// Can only get screen size at current time afaik
 				updateScreenSize();
 				ResizeEvent e(screenWidth, screenHeight);
-				// TODO: Dispatch it to the body
+				body.handleEvent(e);
 			}
 			else if(ch == KEY_MOUSE){
 				MEVENT me;
@@ -76,17 +76,31 @@ namespace CW {
 					MouseEvent e;
 					e.x = me.x;
 					e.y = me.y;
-					if(me.bstate = REPORT_MOUSE_MOVEMENT){
+					if(me.bstate & REPORT_MOUSE_MOVEMENT){
 						e.type = EVENT_MOUSE_MOVE;
 					}
-					// TODO: Finish and dispatch to body
+					else if(me.bstate & BUTTON1_PRESSED ||
+						me.bstate & BUTTON2_PRESSED ||
+						me.bstate & BUTTON3_PRESSED ||
+						me.bstate & BUTTON4_PRESSED){
+						e.type = EVENT_MOUSE_DOWN;
+					}
+					else if(me.bstate & BUTTON1_RELEASED ||
+						me.bstate & BUTTON2_RELEASED ||
+						me.bstate & BUTTON3_RELEASED ||
+						me.bstate & BUTTON4_RELEASED){
+						e.type = EVENT_MOUSE_UP;
+					}
+					// TODO: Finish
+					body.handleMouseEvent(e);
 				}
 			}
 			else if(ch == 'f'){
 				stopLoop();
 			}
 			else{
-				// TODO: Dispatch key event to body
+				KeyEvent e(ch);
+				body.handleKeyEvent(e);
 			}
 			ch = getch();
 		}
@@ -472,16 +486,13 @@ namespace CW {
 		this->y = y;
 	}
 
-	ResizeEvent::ResizeEvent(){
-		type = EVENT_RESIZE;
-		x = 0;
-		y = 0;
+	KeyEvent::KeyEvent(){
+		this->type = EVENT_KEY;
 	}
 
-	ResizeEvent::ResizeEvent(int x, int y){
-		type = EVENT_RESIZE;
-		this->x = x;
-		this->y = y;
+	KeyEvent::KeyEvent(int key){
+		this->type = EVENT_KEY;
+		this->key = key;
 	}
 
 	// Externs
