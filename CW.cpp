@@ -67,7 +67,7 @@ namespace CW {
 				// Generate and dispatch a resize event
 				// Can only get screen size at current time afaik
 				updateScreenSize();
-				ResizeEvent e(screenWidth, screenHeight);
+				Event e(EVENT_RESIZE, screenWidth, screenHeight);
 				body.handleEvent(e);
 			}
 			else if(ch == KEY_MOUSE){
@@ -76,7 +76,7 @@ namespace CW {
 					MouseEvent e;
 					e.x = me.x;
 					e.y = me.y;
-					if(me.bstate & REPORT_MOUSE_MOVEMENT){
+					if(me.bstate & REPORT_MOUSE_POSITION){
 						e.type = EVENT_MOUSE_MOVE;
 					}
 					else if(me.bstate & BUTTON1_PRESSED ||
@@ -107,12 +107,12 @@ namespace CW {
 	}
 
 	void end(){
-		printf("\033[?1000h");
-		fflush(stdout);
 		endwin();
+		printf("\033[?10031h\n");
+		fflush(stdout);
 	}
 
-	int updateScreenSize(){
+	void updateScreenSize(){
 		getmaxyx(stdscr, screenHeight, screenWidth);
 	}
 
@@ -362,6 +362,37 @@ namespace CW {
 		children.push_back(widget);
 	}
 
+	void Widget::handleEvent(Event &e){
+		
+	}
+
+	void Widget::handleMouseEvent(MouseEvent &e){
+		int i = 0;
+		while(i < children.size() && !e.stopped){
+			if(children[i]->contains(e.x, e.y)){
+				children[i]->handleMouseEvent(e);
+			}
+		}
+	}
+
+	void Widget::handleKeyEvent(KeyEvent &e){
+		// Propagate event downwards
+		int i = 0;
+		while(i < children.size() && !e.stopped){
+			children[i]->handleKeyEvent(e);
+		}
+	}
+
+	// Used for event "collisions" - does a point fall within this widget
+	int Widget::contains(int x, int y){
+		if(x >= boundingBox.x && x <= boundingBox.width){
+			if(y >= boundingBox.y && y <= boundingBox.height){
+				return 1; // Coords are contained in this widget
+			}
+		}
+		return 0; // Coords lay outside this widget
+	}
+
 	GridDefinition::GridDefinition(){
 		value = 0;
 		type = UNIT_CELL;
@@ -444,18 +475,25 @@ namespace CW {
 		type = -1; // Invalid type
 		x = -1;
 		y = -1;
+		stopped = 0;
 	}
 
-	Event(int type){
+	Event::Event(int type){
 		this->type = type;
 		x = -1;
 		y = -1;
+		stopped = 0;
 	}
 
-	Event(int type, int x, int y){
+	Event::Event(int type, int x, int y){
 		this->type = type;
 		this->x = x;
 		this->y = y;
+		stopped = 0;
+	}
+
+	void Event::stop(){
+		stopped = 1;
 	}
 
 	MouseEvent::MouseEvent(){
@@ -463,6 +501,7 @@ namespace CW {
 		count = 0;
 		x = -1;
 		y = -1;
+		stopped = 0;
 	}
 
 	MouseEvent::MouseEvent(int type){
@@ -470,6 +509,7 @@ namespace CW {
 		count = 0;
 		x = -1;
 		y = -1;
+		stopped = 0;
 	}
 
 	MouseEvent::MouseEvent(int type, int x, int y){
@@ -477,6 +517,7 @@ namespace CW {
 		count = 0;
 		this->x = x;
 		this->y = y;
+		stopped = 0;
 	}
 
 	MouseEvent::MouseEvent(int type, int x, int y, int count){
@@ -484,15 +525,18 @@ namespace CW {
 		this->count = count;
 		this->x = x;
 		this->y = y;
+		stopped = 0;
 	}
 
 	KeyEvent::KeyEvent(){
 		this->type = EVENT_KEY;
+		stopped = 0;
 	}
 
 	KeyEvent::KeyEvent(int key){
 		this->type = EVENT_KEY;
 		this->key = key;
+		stopped = 0;
 	}
 
 	// Externs

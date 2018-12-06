@@ -11,6 +11,7 @@ namespace CW {
 	void loop(int);
 	void stopLoop();
 	void dispatchEvents();
+	void updateScreenSize();
 
 	long sleep(long);
 
@@ -86,13 +87,16 @@ namespace CW {
 	const int EVENT_MOUSE_DOWN = 3;
 	const int EVENT_MOUSE_UP = 4;
 	const int EVENT_MOUSE_CLICK = 5;
+	const int EVENT_KEY = 6;
 
 	struct Event {
 		int type;
 		int x, y;
+		int stopped;
 		Event();
 		Event(int);
 		Event(int, int, int);
+		void stop();
 	};
 
 	struct MouseEvent : Event {
@@ -101,6 +105,7 @@ namespace CW {
 		MouseEvent();
 		MouseEvent(int);
 		MouseEvent(int, int, int);
+		MouseEvent(int, int, int, int);
 	};
 
 	struct KeyEvent : Event {
@@ -123,6 +128,7 @@ namespace CW {
 		void handleEvent(Event&);
 		void handleMouseEvent(MouseEvent&);
 		void handleKeyEvent(KeyEvent&);
+		virtual int contains(int, int);
 	};
 
 	const char UNIT_GRID = '*'; // Fill available space. Unique to grid layouts
