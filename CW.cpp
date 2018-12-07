@@ -419,52 +419,25 @@ namespace CW {
 		rows.push_back(gd);
 	}
 
-	int Grid::oddOrEven(std::vector<GridDefinition>& gridTemplate){
-		if(gridTemplate.size() <= 1){
-			// There is either nothing or one thing to render, so we do not need
-			// a specific number of cells to render this grid
-			return GRID_EITHER;
-		}
-		// Another condition for GRID_EITHER is if all of the GridDefinitions are of
-		// type cell. In other words, the grid is fixed size. This is common for row heights
-		int i = 0, allFixedSize = 1;
-		while(i < gridTemplate.size()){
-			if(gridTemplate[i].type == UNIT_GRID){
-				allFixedSize = 0;
-				break;
-			}
-			i++;
-		}
-		if(allFixedSize){
-			return GRID_EITHER;
-		}
-		// What we know at this point:
-		// * More than one item to render
-		// * Not all items are fixed size
-		// Now comes the difficult part: determine odd or even!
-		i = 0;
-		double fixedDimension = 0.0, gridDimension = 0.0;
+	void Grid::inflateDefinitions(std::vector<GridDefinition>& gridTemplate, int availableSpace){
+		// This will be, admittedly, a poor implementation.
+		// Be gentle, it's my first time
+		int i = 0;
+		// Subtract fixed size items from the grid
 		while(i < gridTemplate.size()){
 			if(gridTemplate[i].type == UNIT_CELL){
-				fixedDimension += gridTemplate[i].value;
-			}
-			else if(gridTemplate[i].type == UNIT_GRID){
-				gridDimension += gridTemplate[i].value;
+				availableSpace -= gridTemplate[i].value;
 			}
 			i++;
 		}
-		int gridOdd = 0, fixedOdd = 0;
-		if((int) gridDimension % 2 != 0){
-			gridOdd = 1;
-		}
-		if((int) fixedDimension % 2 != 0){
-			fixedOdd = 1;
-		}
-		if(fixedOdd || gridOdd){
-			return GRID_ODD;
-		}
-		else{
-			return GRID_EVEN;
+		i = 0;
+		// Add up the total amount of grid units
+		double totalGridUnits = 0;
+		while(i < gridTemplate.size()){
+			if(gridTemplate[i].type == UNIT_GRID){
+				totalGridUnits += gridTemplate[i].value;
+			}
+			i++;
 		}
 	}
 

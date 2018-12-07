@@ -135,6 +135,7 @@ namespace CW {
 
 	struct GridDefinition {
 		double value;
+		int inflatedValue;
 		char type;
 		GridDefinition();
 		GridDefinition(double, char);
@@ -153,7 +154,7 @@ namespace CW {
 		void addColumnDefinition(GridDefinition&);
 		void addRowDefinition(GridDefinition&);
 		// Determine if odd or even amount of cells needed to render
-		static int oddOrEven(std::vector<GridDefinition>&);
+		static void inflateDefinitions(std::vector<GridDefinition>&, int);
 	};
 
 	// Extern variables
