@@ -2,6 +2,7 @@
 #include <time.h>
 #include <ncurses.h>
 #include <stdio.h>
+#include <math.h>
 
 namespace CW {
 
@@ -32,13 +33,9 @@ namespace CW {
 		WHITE = Color(7);
 		// Make the cursor invisible initially
 		curs_set(0);
-		// Set up the body
-		body.width->value = 100.0;
-		body.width->type = UNIT_PERCENT;
-		body.height->value = 100.0;
-		body.height->type = UNIT_PERCENT;
 		// Setup loop
 		running = 0;
+		updateScreenSize();
 	}
 
 	void loop(){
@@ -237,9 +234,9 @@ namespace CW {
 	}
 
 	Unit::Unit(){
-		value = 0;
+		value = 100.0;
 		derivedValue = 0;
-		type = UNIT_CELL;
+		type = UNIT_PERCENT;
 	}
 
 	Unit::Unit(double value, char type){
@@ -305,6 +302,9 @@ namespace CW {
 		}
 
 		void rect(int x, int y, int width, int height, ColorPair &color){
+			if(width < 1 || height < 1){
+				return;
+			}
 			attron(COLOR_PAIR(color.id));
 			int i = 0, j = 0;
 			while(i < height){
@@ -396,11 +396,13 @@ namespace CW {
 	GridDefinition::GridDefinition(){
 		value = 0;
 		type = UNIT_CELL;
+		inflatedValue = 0;
 	}
 
 	GridDefinition::GridDefinition(double value, char type){
 		this->value = value;
 		this->type = type;
+		inflatedValue = 0;
 	}
 
 	void Grid::render(){
@@ -408,7 +410,22 @@ namespace CW {
 	}
 
 	void Grid::render(const Box &box){
-
+		int i = 0, x = box.x, y = box.y, r = 0, c = 0;
+		while(i < children.size()){
+			Box renderBox(x, y, 
+				rows[r].inflatedValue,
+				columns[c].inflatedValue);
+			children[i]->render(renderBox);
+			x += columns[c].inflatedValue;
+			i++;
+			c++;
+			if(c == columns.size()){
+				//x = box.x;
+				//y += rows[r].inflatedValue;
+				c = 0;
+				r++;
+			}
+		}
 	};
 
 	void Grid::addColumnDefinition(GridDefinition &gd){
@@ -439,10 +456,45 @@ namespace CW {
 			}
 			i++;
 		}
+		// Inflate each item
+		// Floor them so that any semi-cells can be added
+		// back if we still have the space at the end
+		i = 0;
+		int totalUsedSpace = 0;
+		while(i < gridTemplate.size()){
+			if(gridTemplate[i].type == UNIT_GRID){
+				gridTemplate[i].inflatedValue = (int) floor(
+					availableSpace * (gridTemplate[i].value / totalGridUnits)
+				);
+				totalUsedSpace += gridTemplate[i].inflatedValue;
+			}
+			i++;
+		}
+		// Clean up any unused cells
+		i = 0;
+		while(totalUsedSpace < availableSpace){
+			if(gridTemplate[i].type == UNIT_GRID){
+				gridTemplate[i].inflatedValue++;
+				totalUsedSpace++;
+			}
+			// Go back to the beginning of the grid if we have THAT MANY
+			// extra cells
+			i++;
+			if(i == gridTemplate.size()){
+				i = 0;
+			}
+		}
 	}
 
-	void Grid::inflate(){};
-	void Grid::addChild(Widget *widget){};
+	void Grid::inflate(){
+		Widget::inflate();
+		inflateDefinitions(columns, boundingBox.width);
+		inflateDefinitions(rows, boundingBox.height);
+	};
+
+	void Grid::addChild(Widget *widget){
+		children.push_back(widget); // Don't inflate the widget
+	};
 
 	Event::Event(){
 		type = -1; // Invalid type
