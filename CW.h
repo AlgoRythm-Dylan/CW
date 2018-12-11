@@ -32,7 +32,7 @@ namespace CW {
 		Unit(); // Empty constructor
 		Unit(double, char);
 		virtual void derive(double); // Derive given max
-		virtual void operator=(double); // Set value using =
+		void operator=(double); // Set value using =
 	};
 
 	struct CalculatedUnit : Unit {
