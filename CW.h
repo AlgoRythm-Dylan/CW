@@ -18,8 +18,9 @@ namespace CW {
 	struct Box {
 		int x, y, width, height;
 		Box(); // Empty constructor
+		Box(const Box&); // Copy constructor
 		Box(int, int, int, int); // x, y, width, height
-		void values(int, int, int, int);
+		void values(int, int, int, int); // Easy way to set all values
 	};
 
 	const char UNIT_CELL = 'C'; // Cell
@@ -130,9 +131,7 @@ namespace CW {
 		Box boundingBox;
 		std::vector<Widget*> children;
 		ColorPair color;
-		void handleEvent(Event&);
-		void handleMouseEvent(MouseEvent&);
-		void handleKeyEvent(KeyEvent&);
+		virtual void handleEvent(Event&);
 		virtual int contains(int, int);
 	};
 
@@ -166,6 +165,7 @@ namespace CW {
 		Widget* setChildAt(Widget*, int, int);
 		void addColumnDefinition(GridDefinition&);
 		void addRowDefinition(GridDefinition&);
+		virtual void handleEvent(Event&);
 		// Determine if odd or even amount of cells needed to render
 		static void inflateDefinitions(std::vector<GridDefinition>&, int);
 	};
@@ -176,7 +176,7 @@ namespace CW {
 	extern ColorPair defaultColorPair;
 	extern Color BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE;
 	extern int fps, screenWidth, screenHeight, running;
-	extern Widget body;
+	extern Widget* body;
 
 }
 

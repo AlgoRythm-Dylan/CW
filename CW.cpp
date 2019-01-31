@@ -36,6 +36,7 @@ namespace CW {
 		// Setup loop
 		running = 0;
 		updateScreenSize();
+		body = new Widget();
 	}
 
 	void loop(){
@@ -50,7 +51,7 @@ namespace CW {
 			// Get input from the user
 			dispatchEvents();
 			// Render the body and it's children
-			body.render();
+			body->render();
 			// Actually update the screen (Hopefully done only once per render)
 			Draw::update();
 			// Wait until next frame
@@ -71,7 +72,7 @@ namespace CW {
 				// Can only get screen size at current time afaik
 				updateScreenSize();
 				Event e(EventType::WindowResize, screenWidth, screenHeight);
-				body.handleEvent(e);
+				body->handleEvent(e);
 			}
 			else if(ch == KEY_MOUSE){
 				MEVENT me;
@@ -95,7 +96,7 @@ namespace CW {
 						e.type = EventType::MouseUp;
 					}
 					// TODO: Finish
-					body.handleMouseEvent(e);
+					body->handleEvent(e);
 				}
 			}
 			else if(ch == 'f'){
@@ -103,7 +104,7 @@ namespace CW {
 			}
 			else{
 				KeyEvent e(ch);
-				body.handleKeyEvent(e);
+				body->handleEvent(e);
 			}
 			ch = getch();
 		}
@@ -223,6 +224,13 @@ namespace CW {
 		y = 0;
 		width = 0;
 		height = 0;
+	}
+
+	Box::Box(const Box &otherBox){
+		x = otherBox.x;
+		y = otherBox.y;
+		width = otherBox.width;
+		height = otherBox.height;
 	}
 
 	Box::Box(int x, int y, int width, int height){
@@ -370,6 +378,7 @@ namespace CW {
 		// Second step of self-placement, but more importantly,
 		// allows parent widgets (such as grids) to control layout and size
 		Draw::rect(box.x, box.y, box.width, box.height, color);
+		boundingBox = box; // Update current bouding box, for children to render into
 		int i = 0;
 		while(i < children.size()){
 			children[i]->render();
@@ -378,14 +387,29 @@ namespace CW {
 	}
 
 	void Widget::addChild(Widget *widget){
+		// Add to the child list, so we can send events to this widget and render it
 		children.push_back(widget);
+		// Tell the new widget who it's new parent is and have it size itself correctly
+		widget->parent = this;
+		widget->inflate();
 	}
 
 	void Widget::handleEvent(Event &e){
-		
+		if(e.type == EventType::WindowResize){
+			if(!parent){
+				// If this is the body widget, there will be no parent,
+				// and this widget will need to react to the window size
+				inflate();
+			}
+			int i = 0;
+			while(i < children.size() && !e.stopped){
+				children[i]->handleEvent(e);
+				i++;
+			}
+		}	
 	}
 
-	void Widget::handleMouseEvent(MouseEvent &e){
+	/*void Widget::handleMouseEvent(MouseEvent &e){
 		int i = 0;
 		while(i < children.size() && !e.stopped){
 			if(children[i]->contains(e.x, e.y)){
@@ -400,7 +424,7 @@ namespace CW {
 		while(i < children.size() && !e.stopped){
 			children[i]->handleKeyEvent(e);
 		}
-	}
+	}*/
 
 	// Used for event "collisions" - does a point fall within this widget
 	int Widget::contains(int x, int y){
@@ -473,6 +497,15 @@ namespace CW {
 
 	void Grid::addRowDefinition(GridDefinition &gd){
 		rows.push_back(gd);
+	}
+
+	void Grid::handleEvent(Event &e){
+		if(e.type == EventType::WindowResize){
+			// Just react to resize if this widget is the body
+			if(!parent){
+				inflate();
+			}
+		}
 	}
 
 	void Grid::inflateDefinitions(std::vector<GridDefinition>& gridTemplate, int availableSpace){
@@ -636,6 +669,6 @@ namespace CW {
 	ColorPair defaultColorPair;
 	Color BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE;
 	int fps, screenWidth, screenHeight, running;
-	Widget body;
+	Widget *body;
 
 }

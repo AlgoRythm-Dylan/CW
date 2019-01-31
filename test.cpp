@@ -21,10 +21,8 @@ int main(){
 	g.addRowDefinition(r2);
 	g.addColumnDefinition(c1);
 	g.addColumnDefinition(c2);
-	body.addChild(&g);
-	body.inflate();
-	g.inflate();
-	g.render();
+	delete body;
+	body = &g;
 	loop();
 	end();
 	return 0;
