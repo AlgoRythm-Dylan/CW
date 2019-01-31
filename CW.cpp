@@ -70,7 +70,7 @@ namespace CW {
 				// Generate and dispatch a resize event
 				// Can only get screen size at current time afaik
 				updateScreenSize();
-				Event e(EVENT_RESIZE, screenWidth, screenHeight);
+				Event e(EventType::WindowResize, screenWidth, screenHeight);
 				body.handleEvent(e);
 			}
 			else if(ch == KEY_MOUSE){
@@ -80,19 +80,19 @@ namespace CW {
 					e.x = me.x;
 					e.y = me.y;
 					if(me.bstate & REPORT_MOUSE_POSITION){
-						e.type = EVENT_MOUSE_MOVE;
+						e.type = EventType::MouseMove;
 					}
 					else if(me.bstate & BUTTON1_PRESSED ||
 						me.bstate & BUTTON2_PRESSED ||
 						me.bstate & BUTTON3_PRESSED ||
 						me.bstate & BUTTON4_PRESSED){
-						e.type = EVENT_MOUSE_DOWN;
+						e.type = EventType::MouseDown;
 					}
 					else if(me.bstate & BUTTON1_RELEASED ||
 						me.bstate & BUTTON2_RELEASED ||
 						me.bstate & BUTTON3_RELEASED ||
 						me.bstate & BUTTON4_RELEASED){
-						e.type = EVENT_MOUSE_UP;
+						e.type = EventType::MouseUp;
 					}
 					// TODO: Finish
 					body.handleMouseEvent(e);
@@ -563,20 +563,20 @@ namespace CW {
 	}
 
 	Event::Event(){
-		type = -1; // Invalid type
+		type = EventType::Invalid;
 		x = -1;
 		y = -1;
 		stopped = 0;
 	}
 
-	Event::Event(int type){
+	Event::Event(EventType type){
 		this->type = type;
 		x = -1;
 		y = -1;
 		stopped = 0;
 	}
 
-	Event::Event(int type, int x, int y){
+	Event::Event(EventType type, int x, int y){
 		this->type = type;
 		this->x = x;
 		this->y = y;
@@ -588,14 +588,14 @@ namespace CW {
 	}
 
 	MouseEvent::MouseEvent(){
-		type = EVENT_MOUSE;
+		type = EventType::Mouse;
 		count = 0;
 		x = -1;
 		y = -1;
 		stopped = 0;
 	}
 
-	MouseEvent::MouseEvent(int type){
+	MouseEvent::MouseEvent(EventType type){
 		this->type = type;
 		count = 0;
 		x = -1;
@@ -603,7 +603,7 @@ namespace CW {
 		stopped = 0;
 	}
 
-	MouseEvent::MouseEvent(int type, int x, int y){
+	MouseEvent::MouseEvent(EventType type, int x, int y){
 		this->type = type;
 		count = 0;
 		this->x = x;
@@ -611,7 +611,7 @@ namespace CW {
 		stopped = 0;
 	}
 
-	MouseEvent::MouseEvent(int type, int x, int y, int count){
+	MouseEvent::MouseEvent(EventType type, int x, int y, int count){
 		this->type = type;
 		this->count = count;
 		this->x = x;
@@ -620,12 +620,12 @@ namespace CW {
 	}
 
 	KeyEvent::KeyEvent(){
-		this->type = EVENT_KEY;
+		this->type = EventType::Key;
 		stopped = 0;
 	}
 
 	KeyEvent::KeyEvent(int key){
-		this->type = EVENT_KEY;
+		this->type = EventType::Key;
 		this->key = key;
 		stopped = 0;
 	}

@@ -81,37 +81,42 @@ namespace CW {
 
 	// Event system
 
-	const int EVENT_RESIZE = 0;
-	const int EVENT_MOUSE = 1;
-	const int EVENT_MOUSE_MOVE = 2;
-	const int EVENT_MOUSE_DOWN = 3;
-	const int EVENT_MOUSE_UP = 4;
-	const int EVENT_MOUSE_CLICK = 5;
-	const int EVENT_KEY = 6;
+	enum EventType {
+		WindowResize,
+		ParentResize,
+		Mouse,
+		MouseMove,
+		MouseDown,
+		MouseUp,
+		MouseClick,
+		Key,
+		Generic,
+		Invalid
+	};
 
 	struct Event {
-		int type;
+		EventType type;
 		int x, y;
-		int stopped;
+		int stopped; // Boolean. Is the event stopped/ cancelled?
 		Event();
-		Event(int);
-		Event(int, int, int);
+		Event(EventType); // Generic-as-it-gets event
+		Event(EventType, int, int); // (Usually) EventType at position x, y
 		void stop();
 	};
 
 	struct MouseEvent : Event {
-		int state;
-		int count;
+		int state; // The mouse state, from ncurses
+		int count; // Double, even triple clicks are reported from curses
 		MouseEvent();
-		MouseEvent(int);
-		MouseEvent(int, int, int);
-		MouseEvent(int, int, int, int);
+		MouseEvent(EventType); // Type
+		MouseEvent(EventType, int, int); // Type, x, y
+		MouseEvent(EventType, int, int, int); // Type, x, y, count
 	};
 
 	struct KeyEvent : Event {
 		int key;
 		KeyEvent();
-		KeyEvent(int);
+		KeyEvent(int); // Constructor taking key
 	};
 
 	struct Widget {
@@ -148,10 +153,6 @@ namespace CW {
 		int colSpan, rowSpan;
 		Widget* child;
 	};
-
-	const int GRID_ODD = -1; // Even amount of cells needed to render the grid
-	const int GRID_EITHER = 0; // Only one grid region; any amount of cell will do
-	const int GRID_EVEN = 1; // Odd amount of cells needed to render the grid
 
 	struct Grid : Widget {
 		std::vector<GridDefinition> columns, rows;
