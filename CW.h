@@ -141,16 +141,28 @@ namespace CW {
 		GridDefinition(double, char);
 	};
 
+	struct GridChild {
+		GridChild();
+		GridChild(Widget*, int, int);
+		int column, row;
+		int colSpan, rowSpan;
+		Widget* child;
+	};
+
 	const int GRID_ODD = -1; // Even amount of cells needed to render the grid
 	const int GRID_EITHER = 0; // Only one grid region; any amount of cell will do
 	const int GRID_EVEN = 1; // Odd amount of cells needed to render the grid
 
 	struct Grid : Widget {
 		std::vector<GridDefinition> columns, rows;
+		std::vector<GridChild> childPositions;
 		virtual void render();
 		virtual void render(const Box&);
 		virtual void inflate();
 		virtual void addChild(Widget*);
+		virtual void addChild(Widget*, int, int);
+		Widget* getChildAt(int, int);
+		Widget* setChildAt(Widget*, int, int);
 		void addColumnDefinition(GridDefinition&);
 		void addRowDefinition(GridDefinition&);
 		// Determine if odd or even amount of cells needed to render

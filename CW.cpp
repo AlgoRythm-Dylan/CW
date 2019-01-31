@@ -47,12 +47,18 @@ namespace CW {
 		int sleepAmount = 1000 / fps;
 		running = 1;
 		while(running){
+			// Get input from the user
 			dispatchEvents();
+			// Render the body and it's children
 			body.render();
+			// Actually update the screen (Hopefully done only once per render)
+			Draw::update();
+			// Wait until next frame
 			sleep(sleepAmount);
 		}
 	}
 
+	// Simple, eh?
 	void stopLoop(){
 		running = false;
 	}
@@ -324,8 +330,9 @@ namespace CW {
 	}
 
 	Widget::Widget(){
-		x = new Unit();
-		y = new Unit();
+		parent = NULL;
+		x = new Unit(0, UNIT_CELL);
+		y = new Unit(0, UNIT_CELL);
 		width = new Unit();
 		height = new Unit();
 		inflate(); // Inflate the widget according to the size of stdscr
@@ -333,10 +340,18 @@ namespace CW {
 
 	void Widget::inflate(){
 		// Derive all values, split text into lines, size buffers, etc
-		x->derive(screenWidth);
-		y->derive(screenHeight);
-		width->derive(screenWidth);
-		height->derive(screenHeight);
+		if(parent){
+			x->derive(parent->width->derivedValue);
+			y->derive(parent->height->derivedValue);
+			width->derive(parent->width->derivedValue);
+			height->derive(parent->height->derivedValue);
+		}
+		else{
+			x->derive(screenWidth);
+			y->derive(screenHeight);
+			width->derive(screenWidth);
+			height->derive(screenHeight);
+		}
 		// Update the bounding box
 		boundingBox.values(
 				(int) x->derivedValue,
@@ -355,7 +370,11 @@ namespace CW {
 		// Second step of self-placement, but more importantly,
 		// allows parent widgets (such as grids) to control layout and size
 		Draw::rect(box.x, box.y, box.width, box.height, color);
-		Draw::update();
+		int i = 0;
+		while(i < children.size()){
+			children[i]->render();
+			i++;
+		}
 	}
 
 	void Widget::addChild(Widget *widget){
@@ -393,6 +412,18 @@ namespace CW {
 		return 0; // Coords lay outside this widget
 	}
 
+	GridChild::GridChild(){
+		child = NULL;
+		column = -1;
+		row = -1;
+	}
+
+	GridChild::GridChild(Widget *child, int column, int row){
+		this->child = child;
+		this->column = column;
+		this->row = row;
+	}
+
 	GridDefinition::GridDefinition(){
 		value = 0;
 		type = UNIT_CELL;
@@ -410,23 +441,31 @@ namespace CW {
 	}
 
 	void Grid::render(const Box &box){
-		int i = 0, x = box.x, y = box.y, r = 0, c = 0;
-		while(i < children.size()){
-			Box renderBox(x, y, 
-				rows[r].inflatedValue,
-				columns[c].inflatedValue);
-			children[i]->render(renderBox);
-			x += columns[c].inflatedValue;
-			i++;
-			c++;
-			if(c == columns.size()){
-				//x = box.x;
-				//y += rows[r].inflatedValue;
-				c = 0;
-				r++;
+		int startX = box.x, startY = box.y, xOffset = 0, yOffset = 0, column = 0, row = 0;
+		// Render columns from left to right
+		while(column < columns.size()){
+			// Do each row within each column
+			yOffset = 0;
+			row = 0;
+			while(row < rows.size()){
+				Widget *child = getChildAt(column, row);
+				if(child){
+					// If this cell isn't empty, render it!
+					Box box(
+						startX + xOffset,
+						startY + yOffset,
+						columns[column].inflatedValue,
+						rows[row].inflatedValue
+					);
+					child->render(box);
+				}
+				yOffset += rows[row].inflatedValue;
+				row++;
 			}
+			xOffset += columns[column].inflatedValue;
+			column++;
 		}
-	};
+	}
 
 	void Grid::addColumnDefinition(GridDefinition &gd){
 		columns.push_back(gd);
@@ -437,51 +476,39 @@ namespace CW {
 	}
 
 	void Grid::inflateDefinitions(std::vector<GridDefinition>& gridTemplate, int availableSpace){
-		// This will be, admittedly, a poor implementation.
-		// Be gentle, it's my first time
+		// Add up all of the definitions that are of type grid
+		double totalGridWeight = 0.0;
 		int i = 0;
-		// Subtract fixed size items from the grid
 		while(i < gridTemplate.size()){
-			if(gridTemplate[i].type == UNIT_CELL){
+			if(gridTemplate[i].type == UNIT_GRID){
+				totalGridWeight += gridTemplate[i].value;
+			}
+			else{
+				gridTemplate[i].inflatedValue = gridTemplate[i].value;
 				availableSpace -= gridTemplate[i].value;
 			}
 			i++;
 		}
+		int totalSpace = availableSpace;
 		i = 0;
-		// Add up the total amount of grid units
-		double totalGridUnits = 0;
 		while(i < gridTemplate.size()){
 			if(gridTemplate[i].type == UNIT_GRID){
-				totalGridUnits += gridTemplate[i].value;
+				double weight = gridTemplate[i].value / totalGridWeight;
+				int value = (int) (totalSpace * weight);
+				gridTemplate[i].inflatedValue = value;
+				availableSpace -= value;
 			}
 			i++;
 		}
-		// Inflate each item
-		// Floor them so that any semi-cells can be added
-		// back if we still have the space at the end
-		i = 0;
-		int totalUsedSpace = 0;
-		while(i < gridTemplate.size()){
-			if(gridTemplate[i].type == UNIT_GRID){
-				gridTemplate[i].inflatedValue = (int) floor(
-					availableSpace * (gridTemplate[i].value / totalGridUnits)
-				);
-				totalUsedSpace += gridTemplate[i].inflatedValue;
-			}
-			i++;
-		}
-		// Clean up any unused cells
-		i = 0;
-		while(totalUsedSpace < availableSpace){
-			if(gridTemplate[i].type == UNIT_GRID){
-				gridTemplate[i].inflatedValue++;
-				totalUsedSpace++;
-			}
-			// Go back to the beginning of the grid if we have THAT MANY
-			// extra cells
-			i++;
-			if(i == gridTemplate.size()){
-				i = 0;
+		// Lastly, distribute any remaining cells to grid types
+		while(availableSpace){
+			i = 0;
+			while(i < gridTemplate.size() && availableSpace){
+				if(gridTemplate[i].type == UNIT_GRID){
+					gridTemplate[i].inflatedValue++;
+					availableSpace--;
+				}
+				i++;
 			}
 		}
 	}
@@ -493,8 +520,47 @@ namespace CW {
 	};
 
 	void Grid::addChild(Widget *widget){
-		children.push_back(widget); // Don't inflate the widget
+		// Add to 0, 0 by default. This is only here for consistency
+		setChildAt(widget, 0, 0);
 	};
+
+	void Grid::addChild(Widget *widget, int column, int row){
+		setChildAt(widget, column, row);
+	}
+
+	Widget* Grid::getChildAt(int column, int row){
+		int i = 0;
+		while(i < childPositions.size()){
+			if(childPositions[i].column == column && childPositions[i].row == row){
+				return childPositions[i].child;
+			}
+			i++;
+		}
+		return NULL;
+	}
+
+	// Basically the heart of adding widgets to a grid. Sets a child at
+	// row/ column. Returns old widget if there was one.
+	Widget* Grid::setChildAt(Widget *widget, int column, int row){
+		Widget *oldWidget = getChildAt(column, row);
+		if(oldWidget){
+			// Find it and replace it
+			int i  = 0;
+			while(i < childPositions.size()){
+				if(childPositions[i].column == column && childPositions[i].row == row){
+					// This is it, cheif
+					childPositions[i].child = widget;
+					return oldWidget;
+				}
+				i++;
+			}
+		}
+		else{
+			// Just add a new one. Simple as that
+			childPositions.push_back(GridChild(widget, column, row));
+		}
+		return oldWidget;
+	}
 
 	Event::Event(){
 		type = -1; // Invalid type
