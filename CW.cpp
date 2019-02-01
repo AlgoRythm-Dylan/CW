@@ -50,6 +50,8 @@ namespace CW {
 		while(running){
 			// Get input from the user
 			dispatchEvents();
+			// Clear the screen
+			Draw::clear();
 			// Render the body and it's children
 			body->render();
 			// Actually update the screen (Hopefully done only once per render)
@@ -338,8 +340,14 @@ namespace CW {
 			}
 		}
 
+		// These may seem simple, but it keeps CW from directly interfacing with ncurses
+		// This really helps with portability
 		void update(){
 			refresh();
+		}
+
+		void clear(){
+			erase();
 		}
 
 	}
