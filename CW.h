@@ -5,6 +5,8 @@
 
 namespace CW {
 
+	struct Widget;
+
 	void init();
 	void end();
 	void loop();
@@ -12,6 +14,7 @@ namespace CW {
 	void stopLoop();
 	void dispatchEvents();
 	void updateScreenSize();
+	void setBody(Widget*);
 
 	long sleep(long);
 

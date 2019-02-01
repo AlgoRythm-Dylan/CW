@@ -120,6 +120,13 @@ namespace CW {
 		getmaxyx(stdscr, screenHeight, screenWidth);
 	}
 
+	void setBody(Widget *newBody){
+		delete body;
+		body = newBody;
+		body->inflate();
+		body->render();
+	}
+
 	// Sleep for n milliseconds and recieve any milliseconds not slept
 	long sleep(long milliseconds){
 		timespec t1, t2;

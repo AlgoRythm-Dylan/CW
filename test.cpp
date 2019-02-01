@@ -21,8 +21,7 @@ int main(){
 	g.addRowDefinition(r2);
 	g.addColumnDefinition(c1);
 	g.addColumnDefinition(c2);
-	delete body;
-	body = &g;
+	setBody(&g);
 	loop();
 	end();
 	return 0;
