@@ -91,6 +91,8 @@ namespace CW {
 		void rect(int, int, int, int, ColorPair&);
 		// Update the screen
 		void update();
+		// Clear the screen
+		void clear();
 	}
 
 	// Event system
