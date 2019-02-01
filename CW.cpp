@@ -111,7 +111,9 @@ namespace CW {
 	}
 
 	void end(){
+		// End curses mode
 		endwin();
+		// Restore to standard mouse reporting
 		printf("\033[?10031h\n");
 		fflush(stdout);
 	}
@@ -129,6 +131,10 @@ namespace CW {
 
 	// Sleep for n milliseconds and recieve any milliseconds not slept
 	long sleep(long milliseconds){
+		// Quit if there's nothing to do
+		if(!milliseconds){
+			return 0;
+		}
 		timespec t1, t2;
 		long nanoseconds, seconds;
 		seconds = milliseconds / 1000;
@@ -226,6 +232,21 @@ namespace CW {
 		return -1; // No more color pairs available :(
 	}
 
+	icoord::icoord(){
+		x = 0;
+		y = 0;
+	}
+
+	icoord::icoord(const icoord& othericoord){
+		x = othericoord.x;
+		y = othericoord.y;
+	}
+
+	icoord::icoord(int x, int y){
+		this->x = x;
+		this->y = y;
+	}
+
 	Box::Box(){
 		x = 0;
 		y = 0;
@@ -266,14 +287,21 @@ namespace CW {
 	}
 
 	void Unit::derive(double max){
+		derivedValue = peekDerive(max);
+	}
+
+	double Unit::peekDerive(double max){
 		if(type == UNIT_CELL){
 			// Cell calculation. Value is derived already
-			derivedValue = value;
+			return value;
 		}
 		else if(type == UNIT_PERCENT){
 			// Percentage calculation. Simple, but still must be derived
-			derivedValue = (value / 100.0) * max;
-		}	
+			return (value / 100.0) * max;
+		}
+		else{
+			return 0;
+		}
 	}
 
 	void Unit::operator=(double value){
@@ -292,17 +320,17 @@ namespace CW {
 		this->u2 = u2;
 	}
 
-	void CalculatedUnit::derive(double max){
-		u1->derive(max);
-		u2->derive(max);
+	double CalculatedUnit::peekDerive(double max){
+		double a = u1->peekDerive(max);
+		double b = u2->peekDerive(max);
 		if(type == '-'){
-			derivedValue = u1->derivedValue - u2->derivedValue;
+			return a - b;
 		}
 		else if(type == '+'){
-			derivedValue = u1->derivedValue + u2->derivedValue;
+			return a + b;
 		}
 		else{
-			derivedValue = 0; // Dunno what to do, so here's a 0 for you.
+			return 0; // Dunno what to do, so here's a 0 for you.
 		}
 	}
 
@@ -441,6 +469,10 @@ namespace CW {
 			}
 		}
 		return 0; // Coords lay outside this widget
+	}
+
+	icoord Widget::peekSize(const icoord& availableSpace){
+		return icoord(0, 0); // For now
 	}
 
 	GridChild::GridChild(){

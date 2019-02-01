@@ -18,6 +18,14 @@ namespace CW {
 
 	long sleep(long);
 
+	// Integer coordinate structure. For x/y **OR** width/height
+	struct icoord {
+		int x, y;
+		icoord();
+		icoord(const icoord&);
+		icoord(int, int);
+	};
+
 	struct Box {
 		int x, y, width, height;
 		Box(); // Empty constructor
@@ -36,6 +44,7 @@ namespace CW {
 		Unit(); // Empty constructor
 		Unit(double, char);
 		virtual void derive(double); // Derive given max
+		virtual double peekDerive(double);
 		void operator=(double); // Set value using =
 	};
 
@@ -43,7 +52,8 @@ namespace CW {
 		Unit *u1, *u2;
 		CalculatedUnit();
 		CalculatedUnit(Unit*, char, Unit*);
-		virtual void derive(double);
+		//virtual void derive(double);
+		virtual double peekDerive(double);
 	};
 
 	struct Color {
@@ -136,6 +146,8 @@ namespace CW {
 		ColorPair color;
 		virtual void handleEvent(Event&);
 		virtual int contains(int, int);
+		// What will be the dimensions of the widget, given some hypothetical available space to render to?
+		virtual icoord peekSize(const icoord&);
 	};
 
 	const char UNIT_GRID = '*'; // Fill available space. Unique to grid layouts
