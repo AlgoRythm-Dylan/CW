@@ -2,6 +2,7 @@
 #define CW_H
 
 #include <vector>
+#include <string>
 
 namespace CW {
 
@@ -79,16 +80,37 @@ namespace CW {
 		static int nextid();
 	};
 
+	enum Alignment {
+		Start,
+		Middle,
+		End
+	};
+
+	struct Text {
+		std::string text;
+		std::vector<int> bakedLineBreaks;
+		Alignment verticalAlignment, horizontalAlignment;
+		Text();
+		Text(std::string); // Going to want a copy of the string
+		ColorPair color;
+		virtual void parseLineBreaks(const icoord&);
+		virtual void render(const Box&);
+	};
+
+	struct RichText : Text {
+
+	};
+
 	namespace Draw {
 		// Place a single character
 		// x, y, char, Color
-		void point(int, int, int, ColorPair&);
+		void point(int, int, int, const ColorPair&);
 		// Draw a line
 		// x1, y1, x2, y1, Color
-		void line(int, int, int, int, ColorPair&);
+		void line(int, int, int, int, const ColorPair&);
 		// Draw  rect
 		// x, y, width, height, color
-		void rect(int, int, int, int, ColorPair&);
+		void rect(int, int, int, int, const ColorPair&);
 		// Update the screen
 		void update();
 		// Clear the screen

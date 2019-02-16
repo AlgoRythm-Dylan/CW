@@ -4,7 +4,7 @@
 using namespace CW;
 int main(){
 	init();
-	ColorPair green(RED, GREEN), red(GREEN, RED), yellow(BLUE, YELLOW), blue(YELLOW, BLUE);
+	/*ColorPair green(RED, GREEN), red(GREEN, RED), yellow(BLUE, YELLOW), blue(YELLOW, BLUE);
 	Grid g;
 	Widget w1, w2, w3, w4;
 	w1.color = green;
@@ -22,7 +22,14 @@ int main(){
 	g.addColumnDefinition(c1);
 	g.addColumnDefinition(c2);
 	setBody(&g);
-	loop();
+	loop();*/
+	ColorPair bluegreen(BLUE, GREEN);
+	Text t("This is sample text!");
+	t.color = bluegreen;
+	Box b(0, 1, 2, 2);
+	t.render(b);
+	Draw::update();
+	sleep(2000);
 	end();
 	return 0;
 }

@@ -234,6 +234,41 @@ namespace CW {
 		return -1; // No more color pairs available :(
 	}
 
+	Text::Text(){
+		verticalAlignment = Alignment::Start;
+		horizontalAlignment = Alignment::Start;
+		text = "";
+		bakedLineBreaks = std::vector<int>();
+		color = defaultColorPair;
+	}
+
+	Text::Text(std::string text){
+		verticalAlignment = Alignment::Start;
+		horizontalAlignment = Alignment::Start;
+		this->text = text;
+		bakedLineBreaks = std::vector<int>();
+		color = defaultColorPair;
+	}
+
+	void Text::parseLineBreaks(const icoord& boundaries){
+
+	}
+
+	void Text::render(const Box& area){
+		int posX = area.x;
+		int posY = area.y;
+		int i = 0;
+		while(i < text.length() && posY <= area.height){
+			Draw::point(posX, posY, text[i], color);
+			posX++;	
+			if(posX >= area.width){
+				posX = area.x;
+				posY++;
+			}
+			i++;
+		}
+	}
+
 	icoord::icoord(){
 		x = 0;
 		y = 0;
@@ -338,11 +373,12 @@ namespace CW {
 
 	namespace Draw {
 		
-		void point(int x, int y, int character, ColorPair &color){
+		void point(int x, int y, int character, const ColorPair &color){
+			attron(COLOR_PAIR(color.id));
 			mvaddch(y, x, character);
 		}
 
-		void line(int x1, int y1, int x2, int y2, ColorPair &color){
+		void line(int x1, int y1, int x2, int y2, const ColorPair &color){
 			int dx = x2 - x1;
 			int dy = y2 - y1;
 			int i = x1;
@@ -352,7 +388,7 @@ namespace CW {
 			}
 		}
 
-		void rect(int x, int y, int width, int height, ColorPair &color){
+		void rect(int x, int y, int width, int height, const ColorPair &color){
 			if(width < 1 || height < 1){
 				return;
 			}
