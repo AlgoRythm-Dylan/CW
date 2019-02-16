@@ -251,7 +251,8 @@ namespace CW {
 	}
 
 	void Text::parseLineBreaks(const icoord& boundaries){
-
+		// I always have trouble with this algorithm
+		
 	}
 
 	void Text::render(const Box& area){
