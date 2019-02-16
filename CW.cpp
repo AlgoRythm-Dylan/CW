@@ -252,21 +252,67 @@ namespace CW {
 
 	void Text::parseLineBreaks(const icoord& boundaries){
 		// I always have trouble with this algorithm
-		
+		bakedLineBreaks.clear();
+		int currentPosition = 0;
+		int currentPositionInLine = 0;
+		while(currentPosition < text.length()){
+			if(string[currentPosition] == '\n'){
+				bakedLineBreaks.push_back(currentPosition);
+				currentPosition++;
+				currentPositionInLine = 0;
+				continue;
+			}
+			int nextLineBreak = getNextLineBreak(currentPosition);
+			int lengthOfNextWord = nextLineBreak - currentPosition;
+			if(lengthOfNextWord <= boundaries.x - currentPositionInLine){
+				// It fits!
+				bakedLineBreaks.push_back(currentPosition);
+				currentPosition += lengthOfNextWord;
+				currentPositionInLine += lengthOfNextWord;
+				continue;
+			}
+			else{
+				// It doesn't fits :(
+				if(lengthOfNextWord > boundaries.x){
+					// It doesn't fits because its TOO BIG.
+					// Split it up. This is gonna need a loop of it's own.
+					// TODO
+				}
+				else{
+					// It will fits on the next line!
+					// Add a line break then get going!
+					bakedLineBreaks.push_back(currentPosition);
+					currentPositionInLine = lengthOfNextWord;
+					currentPosition += lengthOfNextWord;
+					continue;
+				}
+			}
+		}
+	}
+
+	int Text::getNextLineBreak(int position){
+		while(position < text.length()){
+			if(text[position] == ' ' || text[position] == '\n'){
+				return position;
+			}
+			position++;
+		}
 	}
 
 	void Text::render(const Box& area){
 		int posX = area.x;
 		int posY = area.y;
-		int i = 0;
-		while(i < text.length() && posY <= area.height){
-			Draw::point(posX, posY, text[i], color);
-			posX++;	
-			if(posX >= area.width){
-				posX = area.x;
-				posY++;
+		int j = 0;
+		int currentPosition = 0;
+		for(j = 0; j < bakedLineBreaks.length(); j++){
+			// I'm nesting two different types of loops SUE ME
+			int nextLineBreak = bakedLineBreaks[j];
+			while(currentPosition < nextLineBreak){
+				Draw::point(posX, posY, text[currentPosition], color);
+				currentPosition++;
+				posX++;
 			}
-			i++;
+			posY++;
 		}
 	}
 

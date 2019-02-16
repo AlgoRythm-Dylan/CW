@@ -94,8 +94,9 @@ namespace CW {
 		Text(std::string); // Going to want a copy of the string
 		ColorPair color;
 		virtual void parseLineBreaks(const icoord&);
-		int getNextLineBreak(int);
 		virtual void render(const Box&);
+	private:
+		int getNextLineBreak(int); // Helper function
 	};
 
 	struct RichText : Text {
