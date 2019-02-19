@@ -256,7 +256,7 @@ namespace CW {
 		int currentPosition = 0;
 		int currentPositionInLine = 0;
 		while(currentPosition < text.length()){
-			if(string[currentPosition] == '\n'){
+			if(text[currentPosition] == '\n'){
 				bakedLineBreaks.push_back(currentPosition);
 				currentPosition++;
 				currentPositionInLine = 0;
@@ -297,6 +297,7 @@ namespace CW {
 			}
 			position++;
 		}
+		return text.length() - 1;
 	}
 
 	void Text::render(const Box& area){
@@ -304,7 +305,7 @@ namespace CW {
 		int posY = area.y;
 		int j = 0;
 		int currentPosition = 0;
-		for(j = 0; j < bakedLineBreaks.length(); j++){
+		for(j = 0; j < bakedLineBreaks.size(); j++){
 			// I'm nesting two different types of loops SUE ME
 			int nextLineBreak = bakedLineBreaks[j];
 			while(currentPosition < nextLineBreak){
