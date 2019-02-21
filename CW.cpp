@@ -487,10 +487,6 @@ namespace CW {
 
 	}
 
-	Rectangle::Rectangle(){
-		rect = Box(0, 0, 0, 0);
-	}
-
 	void Rectangle::setRect(const Box& rect){
 		// Just copy the box
 		this->rect = rect;
@@ -501,7 +497,7 @@ namespace CW {
 	}
 
 	Widget::Widget(){
-		parent = NULL;
+		parent = nullptr;
 		x = new Unit(0, UNIT_CELL);
 		y = new Unit(0, UNIT_CELL);
 		width = new Unit();
@@ -592,6 +588,7 @@ namespace CW {
 		usedClip = 0;
 		if(clipShape){
 			usedClip = 1;
+			clipShape->setRect(boundingBox);
 			clipShapes.push_back(clipShape);
 		}
 	}

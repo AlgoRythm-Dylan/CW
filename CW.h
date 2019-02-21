@@ -164,16 +164,20 @@ namespace CW {
 
 	// Abstract class to describe shapes
 	struct Shape {
+		Box rect;
 		virtual int contains(int, int) = 0;
 		virtual void setRect(const Box&) = 0;
 	};
 
 	// The most basic shape type
 	struct Rectangle : Shape {
-		Box rect;
-		Rectangle();
 		virtual int contains(int, int);
 		virtual void setRect(const Box&);
+	};
+
+	// Rounded corners in the console? I guess!
+	struct RoundedRectangle : Rectangle {
+		double radius = 0.0;
 	};
 
 	struct Widget {

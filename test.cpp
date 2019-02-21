@@ -1,5 +1,6 @@
 #include "CW.h"
 #include <iostream>
+#include <cmath>
 
 using namespace CW;
 
@@ -14,7 +15,7 @@ struct EndlessVoid : Shape {
 };
 
 int main(){
-	init();
+	/*init();
 	ColorPair green(RED, GREEN), red(GREEN, RED), yellow(BLUE, YELLOW), blue(YELLOW, BLUE);
 	Grid g;
 	Widget w1, w2, w3, w4;
@@ -36,6 +37,22 @@ int main(){
 	g.addColumnDefinition(c2);
 	setBody(&g);
 	loop();
-	end();
+	end();*/
+	// Some math test stuff
+	icoord pointOne(3, 3);
+	icoord pointTwo(2, 2);
+	/*
+
+		. . .
+ 		. 2 .
+		. . 1
+
+	*/
+	// What is the angle between these two?
+	// Expected output: 135*, or 3pi/4 (2.35619)
+	double deltaX = pointTwo.x - pointOne.x;
+	double deltaY = pointOne.y - pointTwo.y;
+	std::cout << atan2(deltaY, deltaX) << std::endl;
+	// This will be used to *yawn* make a rounded rectangle clip area 
 	return 0;
 }
