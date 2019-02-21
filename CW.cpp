@@ -2,7 +2,6 @@
 #include <time.h>
 #include <ncurses.h>
 #include <stdio.h>
-#include <math.h>
 
 namespace CW {
 
@@ -238,7 +237,7 @@ namespace CW {
 		verticalAlignment = Alignment::Start;
 		horizontalAlignment = Alignment::Start;
 		text = "";
-		bakedLineBreaks = std::vector<int>();
+		lineBreaks = std::vector<int>();
 		color = defaultColorPair;
 	}
 
@@ -246,18 +245,19 @@ namespace CW {
 		verticalAlignment = Alignment::Start;
 		horizontalAlignment = Alignment::Start;
 		this->text = text;
-		bakedLineBreaks = std::vector<int>();
+		lineBreaks = std::vector<int>();
 		color = defaultColorPair;
 	}
 
 	void Text::parseLineBreaks(const icoord& boundaries){
 		// I always have trouble with this algorithm
-		bakedLineBreaks.clear();
+		lineBreaks.clear();
 		int currentPosition = 0;
 		int currentPositionInLine = 0;
 		while(currentPosition < text.length()){
 			if(text[currentPosition] == '\n'){
-				bakedLineBreaks.push_back(currentPosition);
+				// This is an explicit line break. Just do it.
+				lineBreaks.push_back(currentPosition);
 				currentPosition++;
 				currentPositionInLine = 0;
 				continue;
@@ -265,8 +265,7 @@ namespace CW {
 			int nextLineBreak = getNextLineBreak(currentPosition);
 			int lengthOfNextWord = nextLineBreak - currentPosition;
 			if(lengthOfNextWord <= boundaries.x - currentPositionInLine){
-				// It fits!
-				bakedLineBreaks.push_back(currentPosition);
+				// It fits! Keep going.
 				currentPosition += lengthOfNextWord;
 				currentPositionInLine += lengthOfNextWord;
 				continue;
@@ -281,39 +280,38 @@ namespace CW {
 				else{
 					// It will fits on the next line!
 					// Add a line break then get going!
-					bakedLineBreaks.push_back(currentPosition);
+					lineBreaks.push_back(currentPosition);
 					currentPositionInLine = lengthOfNextWord;
 					currentPosition += lengthOfNextWord;
 					continue;
 				}
 			}
 		}
+		lineBreaks.push_back(text.length());
 	}
 
 	int Text::getNextLineBreak(int position){
+		position++;
 		while(position < text.length()){
-			if(text[position] == ' ' || text[position] == '\n'){
+			if(text[position] == ' ' || text[position - 1] == ' ' || text[position] == '\n'){
 				return position;
 			}
 			position++;
 		}
-		return text.length() - 1;
+		return text.length();
 	}
 
 	void Text::render(const Box& area){
-		int posX = area.x;
-		int posY = area.y;
-		int j = 0;
-		int currentPosition = 0;
-		for(j = 0; j < bakedLineBreaks.size(); j++){
-			// I'm nesting two different types of loops SUE ME
-			int nextLineBreak = bakedLineBreaks[j];
-			while(currentPosition < nextLineBreak){
-				Draw::point(posX, posY, text[currentPosition], color);
-				currentPosition++;
-				posX++;
+		int textPosition = 0;
+		for(int i = 0; i < lineBreaks.size(); i++){
+			int lineLength = lineBreaks[i];
+			if(i > 0){
+				lineLength -= lineBreaks[i - 1];
 			}
-			posY++;
+			for(int j = 0; j < lineLength; j++){
+				Draw::point(area.x + j, area.y + i, text[textPosition], color);
+				textPosition++;
+			}
 		}
 	}
 
@@ -426,6 +424,7 @@ namespace CW {
 			mvaddch(y, x, character);
 		}
 
+		// Not the most efficient algo. Use sparingly.
 		void line(int x1, int y1, int x2, int y2, const ColorPair &color){
 			int dx = x2 - x1;
 			int dy = y2 - y1;
@@ -450,6 +449,11 @@ namespace CW {
 				j = 0;
 				i++;
 			}
+		}
+
+		void clearRect(int x, int y, int width, int height){
+			// Hooray for reusable code!
+			rect(x, y, width, height, defaultColorPair);
 		}
 
 		// These may seem simple, but it keeps CW from directly interfacing with ncurses

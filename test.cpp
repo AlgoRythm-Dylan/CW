@@ -23,16 +23,28 @@ int main(){
 	g.addColumnDefinition(c2);
 	setBody(&g);
 	loop();*/
-	ColorPair bluegreen(BLUE, GREEN);
-	Text t("Thie is sample text! Nothing else to it!");
-	t.color = bluegreen;
+	ColorPair textColor(BLUE, WHITE);
+	Text t("This is sample text! Nothing else to it!");
+	/* EXPECTED OUTPUT
+
+		"This is "
+		"sample "
+		"text! "
+		"Nothing "
+		"else to "
+		"it!"
+
+	*/
+	t.color = textColor;
 	int textWidth = 10;
 	int textHeight = 20;
 	icoord ic(textWidth, textHeight);
 	Box b(0, 1, textWidth, textHeight);
+	t.parseLineBreaks(ic);
 	t.render(b);
 	Draw::update();
-	sleep(2000);
+	sleep(20000);
 	end();
+	//std::cout << t.bakedLineBreaks.size() << std::endl;
 	return 0;
 }

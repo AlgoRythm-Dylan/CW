@@ -88,7 +88,7 @@ namespace CW {
 
 	struct Text {
 		std::string text;
-		std::vector<int> bakedLineBreaks;
+		std::vector<int> lineBreaks;
 		Alignment verticalAlignment, horizontalAlignment;
 		Text();
 		Text(std::string); // Going to want a copy of the string
@@ -99,6 +99,7 @@ namespace CW {
 		int getNextLineBreak(int); // Helper function
 	};
 
+	// Text with colors and other attributes!
 	struct RichText : Text {
 
 	};
@@ -113,9 +114,10 @@ namespace CW {
 		// Draw  rect
 		// x, y, width, height, color
 		void rect(int, int, int, int, const ColorPair&);
-		// Update the screen
+		// Overwrite region with default color pair and empty cells
+		// x, y, width, height
+		void clearRect(int, int, int, int);
 		void update();
-		// Clear the screen
 		void clear();
 	}
 
