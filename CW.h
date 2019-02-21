@@ -110,7 +110,7 @@ namespace CW {
 		void point(int, int, int, const ColorPair&);
 		// Draw a line
 		// x1, y1, x2, y1, Color
-		void line(int, int, int, int, const ColorPair&);
+		//void line(int, int, int, int, const ColorPair&);
 		// Draw  rect
 		// x, y, width, height, color
 		void rect(int, int, int, int, const ColorPair&);
@@ -119,6 +119,7 @@ namespace CW {
 		void clearRect(int, int, int, int);
 		void update();
 		void clear();
+		int clipCheck(int, int);
 	}
 
 	// Event system
@@ -161,8 +162,24 @@ namespace CW {
 		KeyEvent(int); // Constructor taking key
 	};
 
+	// Abstract class to describe shapes
+	struct Shape {
+		virtual int contains(int, int) = 0;
+		virtual void setRect(const Box&) = 0;
+	};
+
+	// The most basic shape type
+	struct Rectangle : Shape {
+		Box rect;
+		Rectangle();
+		virtual int contains(int, int);
+		virtual void setRect(const Box&);
+	};
+
 	struct Widget {
 		Unit *x, *y, *width, *height;
+		Shape *clipShape = nullptr;
+		int usedClip;
 		Widget();
 		virtual void render();
 		virtual void render(const Box&);
@@ -176,6 +193,8 @@ namespace CW {
 		virtual int contains(int, int);
 		// What will be the dimensions of the widget, given some hypothetical available space to render to?
 		virtual icoord peekSize(const icoord&);
+		void clip();
+		void unclip();
 	};
 
 	const char UNIT_GRID = '*'; // Fill available space. Unique to grid layouts
@@ -220,6 +239,7 @@ namespace CW {
 	extern Color BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE;
 	extern int fps, screenWidth, screenHeight, running;
 	extern Widget* body;
+	extern std::vector<Shape*> clipShapes;
 
 }
 

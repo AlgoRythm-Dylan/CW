@@ -36,6 +36,7 @@ namespace CW {
 		running = 0;
 		updateScreenSize();
 		body = new Widget();
+		clipShapes = std::vector<Shape*>();
 	}
 
 	void loop(){
@@ -420,20 +421,22 @@ namespace CW {
 	namespace Draw {
 		
 		void point(int x, int y, int character, const ColorPair &color){
+			if(!clipCheck(x, y)) return;			
 			attron(COLOR_PAIR(color.id));
 			mvaddch(y, x, character);
 		}
 
 		// Not the most efficient algo. Use sparingly.
-		void line(int x1, int y1, int x2, int y2, const ColorPair &color){
+		/*void line(int x1, int y1, int x2, int y2, const ColorPair &color){
 			int dx = x2 - x1;
 			int dy = y2 - y1;
 			int i = x1;
 			while(i < x2){
+				
 				mvaddch(y1 + dy * (i - x1) / dx, i, ' ');
 				i++;
 			}
-		}
+		} Deprecated for the time being */
 
 		void rect(int x, int y, int width, int height, const ColorPair &color){
 			if(width < 1 || height < 1){
@@ -443,6 +446,10 @@ namespace CW {
 			int i = 0, j = 0;
 			while(i < height){
 				while(j < width){
+					if(!clipCheck(y + i, x + j)){
+						j++;
+						continue;
+					}
 					mvaddch(y + i, x + j, ' ');
 					j++;
 				}
@@ -466,6 +473,31 @@ namespace CW {
 			erase();
 		}
 
+		// Luckily the clipping system is so abstracted away that this code is reusable!
+		int clipCheck(int x, int y){	
+			int currentClip = 0;
+			while(currentClip < clipShapes.size()){
+				if(!clipShapes[currentClip]->contains(x, y)){
+					return 0; // Can't draw here!
+				}
+				currentClip++;
+			}
+			return 1; // All good
+		}
+
+	}
+
+	Rectangle::Rectangle(){
+		rect = Box(0, 0, 0, 0);
+	}
+
+	void Rectangle::setRect(const Box& rect){
+		// Just copy the box
+		this->rect = rect;
+	}
+
+	int Rectangle::contains(int x, int y){
+		return ((x >= rect.x && x <= rect.x + rect.width) && (y >= rect.y && y <= rect.y + rect.width));
 	}
 
 	Widget::Widget(){
@@ -508,6 +540,7 @@ namespace CW {
 	void Widget::render(const Box &box){
 		// Second step of self-placement, but more importantly,
 		// allows parent widgets (such as grids) to control layout and size
+		clip();
 		Draw::rect(box.x, box.y, box.width, box.height, color);
 		boundingBox = box; // Update current bouding box, for children to render into
 		int i = 0;
@@ -515,6 +548,7 @@ namespace CW {
 			children[i]->render();
 			i++;
 		}
+		unclip();
 	}
 
 	void Widget::addChild(Widget *widget){
@@ -540,23 +574,6 @@ namespace CW {
 		}	
 	}
 
-	/*void Widget::handleMouseEvent(MouseEvent &e){
-		int i = 0;
-		while(i < children.size() && !e.stopped){
-			if(children[i]->contains(e.x, e.y)){
-				children[i]->handleMouseEvent(e);
-			}
-		}
-	}
-
-	void Widget::handleKeyEvent(KeyEvent &e){
-		// Propagate event downwards
-		int i = 0;
-		while(i < children.size() && !e.stopped){
-			children[i]->handleKeyEvent(e);
-		}
-	}*/
-
 	// Used for event "collisions" - does a point fall within this widget
 	int Widget::contains(int x, int y){
 		if(x >= boundingBox.x && x <= boundingBox.width){
@@ -570,9 +587,21 @@ namespace CW {
 	icoord Widget::peekSize(const icoord& availableSpace){
 		return icoord(0, 0); // For now
 	}
+	
+	void Widget::clip(){
+		usedClip = 0;
+		if(clipShape){
+			usedClip = 1;
+			clipShapes.push_back(clipShape);
+		}
+	}
+
+	void Widget::unclip(){
+		if(usedClip) clipShapes.pop_back();
+	}
 
 	GridChild::GridChild(){
-		child = NULL;
+		child = nullptr;
 		column = -1;
 		row = -1;
 	}
@@ -600,6 +629,7 @@ namespace CW {
 	}
 
 	void Grid::render(const Box &box){
+		clip();
 		int startX = box.x, startY = box.y, xOffset = 0, yOffset = 0, column = 0, row = 0;
 		// Render columns from left to right
 		while(column < columns.size()){
@@ -624,6 +654,7 @@ namespace CW {
 			xOffset += columns[column].inflatedValue;
 			column++;
 		}
+		unclip();
 	}
 
 	void Grid::addColumnDefinition(GridDefinition &gd){
@@ -805,5 +836,6 @@ namespace CW {
 	Color BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE;
 	int fps, screenWidth, screenHeight, running;
 	Widget *body;
+	std::vector<Shape*> clipShapes;
 
 }

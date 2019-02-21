@@ -2,15 +2,28 @@
 #include <iostream>
 
 using namespace CW;
+
+// To test if the clipping thing works
+struct EndlessVoid : Shape {
+	int contains(int x, int y){
+		return 0;
+	}
+	void setRect(const Box&){
+		// Nope
+	}
+};
+
 int main(){
 	init();
-	/*ColorPair green(RED, GREEN), red(GREEN, RED), yellow(BLUE, YELLOW), blue(YELLOW, BLUE);
+	ColorPair green(RED, GREEN), red(GREEN, RED), yellow(BLUE, YELLOW), blue(YELLOW, BLUE);
 	Grid g;
 	Widget w1, w2, w3, w4;
 	w1.color = green;
 	w2.color = red;
 	w3.color = yellow;
 	w4.color = blue;
+	EndlessVoid *testClipper = new EndlessVoid();
+	w4.clipShape = testClipper;
 	g.addChild(&w1, 0, 0);
 	g.addChild(&w2, 1, 0);
 	g.addChild(&w3, 0, 1);
@@ -22,29 +35,7 @@ int main(){
 	g.addColumnDefinition(c1);
 	g.addColumnDefinition(c2);
 	setBody(&g);
-	loop();*/
-	ColorPair textColor(BLUE, WHITE);
-	Text t("This is sample text! Nothing else to it!");
-	/* EXPECTED OUTPUT
-
-		"This is "
-		"sample "
-		"text! "
-		"Nothing "
-		"else to "
-		"it!"
-
-	*/
-	t.color = textColor;
-	int textWidth = 10;
-	int textHeight = 20;
-	icoord ic(textWidth, textHeight);
-	Box b(0, 1, textWidth, textHeight);
-	t.parseLineBreaks(ic);
-	t.render(b);
-	Draw::update();
-	sleep(20000);
+	loop();
 	end();
-	//std::cout << t.bakedLineBreaks.size() << std::endl;
 	return 0;
 }
