@@ -178,10 +178,33 @@ namespace CW {
 		virtual void setRect(const Box&);
 	};
 
+	// Layout manager base class
+	struct LayoutManager {
+		Widget* widget = nullptr;
+		virtual void render() = 0;
+	};
+
+	// Basic layout manager, perhaps just a bit verbose. No, self-documenting.
+	struct AbsoluteLayoutManager : LayoutManager {
+		virtual void render();
+	};
+
+	enum Orientation {
+		Horizontal,
+		Vertical
+	};
+
+	// More controlling layout manager
+	struct StackingLayoutManager : LayoutManager {
+		Orientation orientation = Orientation::Vertical;
+		virtual void render();
+	};
+
 	struct Widget {
 		Unit *x, *y, *width, *height;
 		Shape *clipShape = nullptr;
-		int usedClip;
+		int usedClip; // Boolean value: did this widget use a clip in the most recent render?
+		LayoutManager *layoutManager = nullptr;
 		Widget();
 		virtual void render();
 		virtual void render(const Box&);
@@ -217,6 +240,7 @@ namespace CW {
 		Widget* child;
 	};
 
+	// TODO: Possibly make grids just a layout manager, and make grids a widget with that layout
 	struct Grid : Widget {
 		std::vector<GridDefinition> columns, rows;
 		std::vector<GridChild> childPositions;

@@ -497,19 +497,38 @@ namespace CW {
 		return ((x >= rect.x && x < rect.x + rect.width) && (y >= rect.y && y < rect.y + rect.height));
 	}
 
+	void AbsoluteLayoutManager::render(){
+		if(!widget){
+			return;
+		}
+		// Just let them render themselves, good luck!
+		for(int i = 0; i < widget->children.size(); i++){
+			widget->children[i]->render();
+		}
+	}
+
+	void StackingLayoutManager::render(){
+		if(orientation == Orientation::Vertical){
+			// Stacks downwards
+		}
+		else if(orientation == Orientation::Horizontal){
+			// Stacks sideways
+		}
+	}
+
 	Widget::Widget(){
 		parent = nullptr;
-		x = new Unit(0, UNIT_CELL);
-		y = new Unit(0, UNIT_CELL);
-		width = new Unit();
-		height = new Unit();
+		x = new Unit();
+		y = new Unit();
+		width = new Unit(100, UNIT_PERCENT);
+		height = new Unit(100, UNIT_PERCENT);
+		layoutManager = new AbsoluteLayoutManager();
 		inflate(); // Inflate the widget according to the size of stdscr
 	}
 
 	void Widget::inflate(){
 		// Derive all values, split text into lines, size buffers, etc
 		if(parent){
-			x->derive(parent->width->derivedValue);
 			y->derive(parent->height->derivedValue);
 			width->derive(parent->width->derivedValue);
 			height->derive(parent->height->derivedValue);
@@ -540,11 +559,7 @@ namespace CW {
 		clip();
 		Draw::rect(box.x, box.y, box.width, box.height, color);
 		boundingBox = box; // Update current bouding box, for children to render into
-		int i = 0;
-		while(i < children.size()){
-			children[i]->render();
-			i++;
-		}
+		layoutManager->render();
 		unclip();
 	}
 
