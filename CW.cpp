@@ -451,7 +451,7 @@ namespace CW {
 						j++;
 						continue;
 					}
-					mvaddch(y + i, x + j, 'x');
+					mvaddch(y + i, x + j, ' ');
 					j++;
 				}
 				j = 0;
@@ -495,71 +495,6 @@ namespace CW {
 
 	int Rectangle::contains(int x, int y){
 		return ((x >= rect.x && x < rect.x + rect.width) && (y >= rect.y && y < rect.y + rect.height));
-	}
-
-	void RoundedRectangle::setRadius(double radius){
-		setRadius(radius, radius, radius, radius);
-	}
-
-	void RoundedRectangle::setRadius(double topLeft, double topRight, double bottomRight, double bottomLeft){
-		radiusTopLeft = topLeft;
-		radiusTopRight = topRight;
-		radiusBottomRight = bottomRight;
-		radiusBottomLeft = bottomLeft;
-	}
-
-	int RoundedRectangle::contains(int x, int y){
-		if(Rectangle::contains(x, y)){
-			// Check each of the corners
-			int cornerSize = (int) radiusTopLeft * 2;
-			// Top right corner
-			if(x < rect.x + cornerSize && y < rect.y + cornerSize){
-				int midX = rect.x + radiusTopLeft + 1;
-				int midY = rect.y + radiusTopLeft + 1;
-				int deltaX = x - midX;
-				int deltaY = midY - y;
-				double angle = atan2(deltaY, deltaX);
-				if(inQuadrant(2, angle) && distance(midX, x, midY, y) > radiusTopLeft){
-					return 0;
-				}
-			}
-			else if(x >= rect.width - cornerSize && y < rect.y + cornerSize){
-				return 0;
-			}
-			else if(x < rect.x + cornerSize && y >= rect.y + rect.height - cornerSize){
-				return 0;
-			}
-			else if(x >= rect.x + rect.width - cornerSize && y >= rect.y + rect.height - cornerSize){
-				return 0;
-			}
-		}
-		return 1;
-	}
-
-	// TODO: Accept values larger than 2pi
-	int RoundedRectangle::quadrant(double radians){
-		if(radians >= 0 && radians <= M_PI_2){
-			return 1;
-		}
-		else if(radians > M_PI_2 && radians <= M_PI){
-			return 2;
-		}
-		else if(radians > M_PI && radians <= M_3PI_2){
-			return 3;
-		}
-		else{
-			return 4;
-		}
-	}
-
-	int RoundedRectangle::inQuadrant(int which, double angle){
-		double angleMax = M_PI_2 * which;
-		double angleMin = M_PI_2 * (which - 1);
-		return angle >= angleMin && angle <= angleMax;
-	}
-	
-	int RoundedRectangle::distance(int x1, int x2, int y1, int y2){
-		return (int) sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
 	}
 
 	Widget::Widget(){

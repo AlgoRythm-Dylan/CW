@@ -178,18 +178,6 @@ namespace CW {
 		virtual void setRect(const Box&);
 	};
 
-	// Rounded corners in the console? I guess!
-	struct RoundedRectangle : Rectangle {
-		double radiusTopLeft, radiusTopRight, radiusBottomLeft, radiusBottomRight;
-		void setRadius(double);
-		void setRadius(double, double, double, double);
-		virtual int contains(int, int);
-	private:
-		static int quadrant(double);
-		static int inQuadrant(int, double);
-		static int distance(int, int, int, int);
-	};
-
 	struct Widget {
 		Unit *x, *y, *width, *height;
 		Shape *clipShape = nullptr;
