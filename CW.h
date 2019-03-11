@@ -4,6 +4,9 @@
 #include <vector>
 #include <string>
 
+#define M_3PI_2 4.71238898038
+#define M_2PI 6.28318530718
+
 namespace CW {
 
 	struct Widget;
@@ -177,7 +180,14 @@ namespace CW {
 
 	// Rounded corners in the console? I guess!
 	struct RoundedRectangle : Rectangle {
-		double radius = 0.0;
+		double radiusTopLeft, radiusTopRight, radiusBottomLeft, radiusBottomRight;
+		void setRadius(double);
+		void setRadius(double, double, double, double);
+		virtual int contains(int, int);
+	private:
+		static int quadrant(double);
+		static int inQuadrant(int, double);
+		static int distance(int, int, int, int);
 	};
 
 	struct Widget {
