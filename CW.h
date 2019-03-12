@@ -4,9 +4,6 @@
 #include <vector>
 #include <string>
 
-#define M_3PI_2 4.71238898038
-#define M_2PI 6.28318530718
-
 namespace CW {
 
 	struct Widget;

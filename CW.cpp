@@ -361,9 +361,9 @@ namespace CW {
 	}
 
 	Unit::Unit(){
-		value = 100.0;
+		value = 0;
 		derivedValue = 0;
-		type = UNIT_PERCENT;
+		type = UNIT_CELL;
 	}
 
 	Unit::Unit(double value, char type){
