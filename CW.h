@@ -44,8 +44,7 @@ namespace CW {
 		char type;
 		Unit(); // Empty constructor
 		Unit(double, char);
-		virtual void derive(double); // Derive given max
-		virtual double peekDerive(double);
+		virtual double derive(double); // Derive given max
 		void operator=(double); // Set value using =
 	};
 
@@ -53,8 +52,7 @@ namespace CW {
 		Unit *u1, *u2;
 		CalculatedUnit();
 		CalculatedUnit(Unit*, char, Unit*);
-		//virtual void derive(double);
-		virtual double peekDerive(double);
+		virtual double derive(double);
 	};
 
 	struct Color {
@@ -215,6 +213,7 @@ namespace CW {
 		virtual int contains(int, int);
 		// What will be the dimensions of the widget, given some hypothetical available space to render to?
 		virtual icoord peekSize(const icoord&);
+		void setLayoutManager(LayoutManager*);
 		void clip();
 		void unclip();
 	};

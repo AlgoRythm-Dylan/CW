@@ -371,11 +371,7 @@ namespace CW {
 		this->type = type;
 	}
 
-	void Unit::derive(double max){
-		derivedValue = peekDerive(max);
-	}
-
-	double Unit::peekDerive(double max){
+	double Unit::derive(double max){
 		if(type == UNIT_CELL){
 			// Cell calculation. Value is derived already
 			return value;
@@ -405,9 +401,9 @@ namespace CW {
 		this->u2 = u2;
 	}
 
-	double CalculatedUnit::peekDerive(double max){
-		double a = u1->peekDerive(max);
-		double b = u2->peekDerive(max);
+	double CalculatedUnit::derive(double max){
+		double a = u1->derive(max);
+		double b = u2->derive(max);
 		if(type == '-'){
 			return a - b;
 		}
@@ -498,9 +494,7 @@ namespace CW {
 	}
 
 	void AbsoluteLayoutManager::render(){
-		if(!widget){
-			return;
-		}
+		if(!widget) return;
 		// Just let them render themselves, good luck!
 		for(int i = 0; i < widget->children.size(); i++){
 			widget->children[i]->render();
@@ -508,8 +502,20 @@ namespace CW {
 	}
 
 	void StackingLayoutManager::render(){
+		if(!widget) return;
 		if(orientation == Orientation::Vertical){
-			// Stacks downwards
+			int currentY = 0;
+			for(int i = 0; i < widget->children.size(); i++){
+				Widget *currentWidget = widget->children[i];
+				currentWidget->inflate();
+				currentWidget->render(Box(
+					widget->boundingBox.x,
+					widget->boundingBox.y + currentY,
+					currentWidget->boundingBox.width,
+					currentWidget->boundingBox.height
+				));
+				currentY += currentWidget->boundingBox.height;
+			}
 		}
 		else if(orientation == Orientation::Horizontal){
 			// Stacks sideways
@@ -529,23 +535,17 @@ namespace CW {
 	void Widget::inflate(){
 		// Derive all values, split text into lines, size buffers, etc
 		if(parent){
-			y->derive(parent->height->derivedValue);
-			width->derive(parent->width->derivedValue);
-			height->derive(parent->height->derivedValue);
+			boundingBox.x = (int) x->derive(parent->boundingBox.width);
+			boundingBox.y = (int) y->derive(parent->boundingBox.height);
+			boundingBox.width = (int) width->derive(parent->boundingBox.width);
+			boundingBox.height = (int) height->derive(parent->boundingBox.height);
 		}
 		else{
-			x->derive(screenWidth);
-			y->derive(screenHeight);
-			width->derive(screenWidth);
-			height->derive(screenHeight);
+			boundingBox.x = (int) x->derive(screenWidth);
+			boundingBox.y = (int) y->derive(screenHeight);
+			boundingBox.width = (int) width->derive(screenWidth);
+			boundingBox.height = (int) height->derive(screenHeight);
 		}
-		// Update the bounding box
-		boundingBox.values(
-				(int) x->derivedValue,
-				(int) y->derivedValue,
-				(int) width->derivedValue,
-			       	(int) height->derivedValue
-		);
 	}
 
 	void Widget::render(){
@@ -611,6 +611,12 @@ namespace CW {
 
 	void Widget::unclip(){
 		if(usedClip) clipShapes.pop_back();
+	}
+
+	void Widget::setLayoutManager(LayoutManager *newManager){
+		delete layoutManager;
+		layoutManager = newManager;
+		layoutManager->widget = this;
 	}
 
 	GridChild::GridChild(){
