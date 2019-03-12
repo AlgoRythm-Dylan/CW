@@ -504,10 +504,10 @@ namespace CW {
 	void StackingLayoutManager::render(){
 		if(!widget) return;
 		if(orientation == Orientation::Vertical){
+			// Stack vertically
 			int currentY = 0;
 			for(int i = 0; i < widget->children.size(); i++){
 				Widget *currentWidget = widget->children[i];
-				//currentWidget->inflate();
 				currentWidget->render(Box(
 					widget->boundingBox.x,
 					widget->boundingBox.y + currentY,
@@ -518,7 +518,18 @@ namespace CW {
 			}
 		}
 		else if(orientation == Orientation::Horizontal){
-			// Stacks sideways
+			// Stack sideways
+			int currentX = 0;
+			for(int i = 0; i < widget->children.size(); i++){
+				Widget *currentWidget = widget->children[i];
+				currentWidget->render(Box(
+					widget->boundingBox.x + currentX,
+					widget->boundingBox.y,
+					currentWidget->boundingBox.width,
+					currentWidget->boundingBox.height
+				));
+				currentX += currentWidget->boundingBox.width;
+			}
 		}
 	}
 

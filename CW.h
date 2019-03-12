@@ -192,6 +192,8 @@ namespace CW {
 	// More controlling layout manager
 	struct StackingLayoutManager : LayoutManager {
 		Orientation orientation = Orientation::Vertical;
+		Alignment verticalAlignment = Alignment::Start;
+		Alignment horizontalAlignment = Alignment::Start;
 		virtual void render();
 	};
 
