@@ -507,7 +507,7 @@ namespace CW {
 			int currentY = 0;
 			for(int i = 0; i < widget->children.size(); i++){
 				Widget *currentWidget = widget->children[i];
-				currentWidget->inflate();
+				//currentWidget->inflate();
 				currentWidget->render(Box(
 					widget->boundingBox.x,
 					widget->boundingBox.y + currentY,
