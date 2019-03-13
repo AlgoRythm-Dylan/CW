@@ -102,7 +102,7 @@ namespace CW {
 					body->handleEvent(e);
 				}
 			}
-			else if(ch == 'f'){
+			else if(ch == 'f' || ch == 'q'){
 				stopLoop();
 			}
 			else{
@@ -509,8 +509,8 @@ namespace CW {
 			for(int i = 0; i < widget->children.size(); i++){
 				Widget *currentWidget = widget->children[i];
 				currentWidget->render(Box(
-					widget->boundingBox.x,
-					widget->boundingBox.y + currentY,
+					widget->boundingBox.x - currentWidget->scrollX,
+					widget->boundingBox.y + currentY - currentWidget->scrollY,
 					currentWidget->boundingBox.width,
 					currentWidget->boundingBox.height
 				));
@@ -523,8 +523,8 @@ namespace CW {
 			for(int i = 0; i < widget->children.size(); i++){
 				Widget *currentWidget = widget->children[i];
 				currentWidget->render(Box(
-					widget->boundingBox.x + currentX,
-					widget->boundingBox.y,
+					widget->boundingBox.x + currentX - currentWidget->scrollX,
+					widget->boundingBox.y - currentWidget->scrollY,
 					currentWidget->boundingBox.width,
 					currentWidget->boundingBox.height
 				));
@@ -568,7 +568,12 @@ namespace CW {
 		// Second step of self-placement, but more importantly,
 		// allows parent widgets (such as grids) to control layout and size
 		clip();
-		Draw::rect(box.x, box.y, box.width, box.height, color);
+		if(parent){
+			Draw::rect(box.x - parent->scrollX, box.y - parent->scrollY, box.width, box.height, color);
+		}
+		else{
+			Draw::rect(box.x, box.y, box.width, box.height, color);
+		}
 		boundingBox = box; // Update current bouding box, for children to render into
 		layoutManager->render();
 		unclip();
@@ -607,10 +612,6 @@ namespace CW {
 		return 0; // Coords lay outside this widget
 	}
 
-	icoord Widget::peekSize(const icoord& availableSpace){
-		return icoord(0, 0); // For now
-	}
-	
 	void Widget::clip(){
 		usedClip = 0;
 		if(clipShape){

@@ -197,11 +197,20 @@ namespace CW {
 		virtual void render();
 	};
 
+	struct ScrollBar {
+		int visible = 1;
+		virtual void render() = 0;
+		Box boundingBox;
+	};
+
 	struct Widget {
 		Unit *x, *y, *width, *height;
 		Shape *clipShape = nullptr;
 		int usedClip; // Boolean value: did this widget use a clip in the most recent render?
 		LayoutManager *layoutManager = nullptr;
+		int scrollX, maxScrollX, scrollY, maxScrollY;
+		ScrollBar *verticalScrollbar, *horizontalScrollBar;
+		int xScrollDisabled = 1, yScrollDisabled = 1;
 		Widget();
 		virtual void render();
 		virtual void render(const Box&);
@@ -214,7 +223,6 @@ namespace CW {
 		virtual void handleEvent(Event&);
 		virtual int contains(int, int);
 		// What will be the dimensions of the widget, given some hypothetical available space to render to?
-		virtual icoord peekSize(const icoord&);
 		void setLayoutManager(LayoutManager*);
 		void clip();
 		void unclip();
@@ -238,7 +246,7 @@ namespace CW {
 		Widget* child;
 	};
 
-	// TODO: Possibly make grids just a layout manager, and make grids a widget with that layout
+	// TODO: Make grids just a layout manager, and make grids a widget with that layout
 	struct Grid : Widget {
 		std::vector<GridDefinition> columns, rows;
 		std::vector<GridChild> childPositions;
