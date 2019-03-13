@@ -197,6 +197,37 @@ namespace CW {
 		virtual void render();
 	};
 
+	const char UNIT_GRID = '*'; // Fill available space. Unique to grid layouts	
+
+	struct GridDefinition {
+		double value;
+		int inflatedValue;
+		char type;
+		GridDefinition();
+		GridDefinition(double, char);
+	};
+
+	struct GridChild {
+		GridChild();
+		GridChild(Widget*, int, int);
+		int column, row;
+		int colSpan, rowSpan;
+		Widget* child;
+	};
+
+	struct GridLayoutManager : LayoutManager {
+		virtual void render();
+		std::vector<GridDefinition> columns, rows;
+		std::vector<GridChild> childPositions;
+		void addChild(Widget*);
+		void addChild(Widget*, int, int);
+		Widget* getChildAt(int, int);
+		Widget* setChildAt(Widget*, int, int);
+		void addColumnDefinition(GridDefinition&);
+		void addRowDefinition(GridDefinition&);
+		static void inflateDefinitions(std::vector<GridDefinition>&, int);
+	};
+
 	struct ScrollBar {
 		int visible = 1;
 		virtual void render() = 0;
@@ -229,40 +260,14 @@ namespace CW {
 		int shouldRender();
 	};
 
-	const char UNIT_GRID = '*'; // Fill available space. Unique to grid layouts
-
-	struct GridDefinition {
-		double value;
-		int inflatedValue;
-		char type;
-		GridDefinition();
-		GridDefinition(double, char);
-	};
-
-	struct GridChild {
-		GridChild();
-		GridChild(Widget*, int, int);
-		int column, row;
-		int colSpan, rowSpan;
-		Widget* child;
-	};
-
 	// TODO: Make grids just a layout manager, and make grids a widget with that layout
 	struct Grid : Widget {
-		std::vector<GridDefinition> columns, rows;
-		std::vector<GridChild> childPositions;
+		GridLayoutManager *layoutManager;
 		virtual void render();
 		virtual void render(const Box&);
 		virtual void inflate();
 		virtual void addChild(Widget*);
-		virtual void addChild(Widget*, int, int);
-		Widget* getChildAt(int, int);
-		Widget* setChildAt(Widget*, int, int);
-		void addColumnDefinition(GridDefinition&);
-		void addRowDefinition(GridDefinition&);
 		virtual void handleEvent(Event&);
-		// Determine if odd or even amount of cells needed to render
-		static void inflateDefinitions(std::vector<GridDefinition>&, int);
 	};
 
 	// Extern variables
