@@ -567,14 +567,14 @@ namespace CW {
 	void Widget::render(const Box &box){
 		// Second step of self-placement, but more importantly,
 		// allows parent widgets (such as grids) to control layout and size
-		clip();
-		if(parent){
-			Draw::rect(box.x - parent->scrollX, box.y - parent->scrollY, box.width, box.height, color);
-		}
-		else{
-			Draw::rect(box.x, box.y, box.width, box.height, color);
-		}
 		boundingBox = box; // Update current bouding box, for children to render into
+		if(parent){
+			boundingBox.x -= parent->scrollX;
+			boundingBox.y -= parent->scrollY;
+		}
+		if(!shouldRender()) return;
+		clip();
+		Draw::rect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height, color);
 		layoutManager->render();
 		unclip();
 	}
@@ -631,6 +631,57 @@ namespace CW {
 		layoutManager->widget = this;
 	}
 
+	int Widget::shouldRender(){
+		/* Should the widget even render? Yes if:
+		 - Widget is at least partially within the screen AND
+		 - Widget is at least partially within its parent
+		
+		Widget:
+
+		A ----------------------------- B
+		|                               |
+		|                               |
+		|                               |
+		|                               |
+		|                               |
+		C ----------------------------- D
+
+		First, check and make sure it is with the screen.
+		
+		It is NOT within the screen if:
+		
+		- Dy is less than 0
+		- Ay is greater than screen height
+		- Dx is less than 0
+		- Ax is greater than screen width
+
+		Then check for the same parameters, using the parent bounding box
+
+		Okay, now that it's in english, let's do it in c++ */
+
+		int Dy = boundingBox.y + boundingBox.height;
+		int Ay = boundingBox.y;
+		int Dx = boundingBox.x + boundingBox.width;
+		int Ax = boundingBox.x;
+		if(Dy <= 0 || Dx <= 0){
+			return 0;
+		}
+		else if(Ay >= screenHeight || Ax >= screenWidth){
+			return 0;
+		}
+		// Okay, so it fits on the SCREEN, but what about within the parent widget?
+		if(parent){
+			if(Dy <= parent->boundingBox.y || Dx <= parent->boundingBox.x){
+				return 0;
+			}
+			else if(Ay >= parent->boundingBox.y + parent->boundingBox.height ||
+				Ax >= parent->boundingBox.x + parent->boundingBox.width){
+				return 0;
+			}
+		}
+		return 1;
+	}
+
 	GridChild::GridChild(){
 		child = nullptr;
 		column = -1;
@@ -660,6 +711,7 @@ namespace CW {
 	}
 
 	void Grid::render(const Box &box){
+		if(!shouldRender()) return;
 		clip();
 		int startX = box.x, startY = box.y, xOffset = 0, yOffset = 0, column = 0, row = 0;
 		// Render columns from left to right

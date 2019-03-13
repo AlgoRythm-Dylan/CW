@@ -14,11 +14,11 @@ int main(){
 	body->setLayoutManager(layout);
 
 	// Move the body widget to (1, 1)
-	body->x->value = 1;
-	body->y->value = 1;
+	body->x->value = 10;
+	body->y->value = 10;
 	
 	// Reads as "100% - 2cells (px)"
-	CalculatedUnit *bodySize = new CalculatedUnit(new Unit(100, UNIT_PERCENT), '-', new Unit(2, UNIT_CELL));
+	CalculatedUnit *bodySize = new CalculatedUnit(new Unit(100, UNIT_PERCENT), '-', new Unit(20, UNIT_CELL));
 
 	// Destroy the basic Units that the body uses for width and height, and replace them
 	delete body->width;
@@ -31,7 +31,7 @@ int main(){
 
 	// Create the clipper for the body. This will hide overflowing widgets.
 	Rectangle *bodyClipper = new Rectangle();
-	body->clipShape = bodyClipper;
+	//body->clipShape = bodyClipper;
 
 	// Create some simple widgets to use for testing
 	// A 3x3 red widget
@@ -45,9 +45,9 @@ int main(){
 	// And a 1x1 yellow widget
 	Widget *w2 = new Widget();
 	w2->color = yellow;
-	w2->height->value = 1;
+	w2->height->value = 2;
 	w2->height->type = UNIT_CELL;
-	w2->width->value = 1;
+	w2->width->value = 2;
 	w2->width->type = UNIT_CELL;
 
 	// Add the widgets to the body
@@ -55,7 +55,8 @@ int main(){
 	body->addChild(w2);
 
 	// Scroll the body down one cell
-	body->scrollY = 1;
+	body->scrollY = -8;
+	body->scrollX = 0;
 
 	// Start the graphics loop
 	loop();

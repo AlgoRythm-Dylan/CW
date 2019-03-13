@@ -226,6 +226,7 @@ namespace CW {
 		void setLayoutManager(LayoutManager*);
 		void clip();
 		void unclip();
+		int shouldRender();
 	};
 
 	const char UNIT_GRID = '*'; // Fill available space. Unique to grid layouts
