@@ -777,6 +777,15 @@ namespace CW {
 	}
 
 	int Widget::shouldRender(){
+		// First, see if the culling algo even needs to take place
+		if(parent){
+			if(!parent->cullChildren || disableCulling){
+				return 1;
+			}
+		}
+		if(disableCulling){
+			return 1;
+		}
 		/* Should the widget even render? Yes if:
 		 - Widget is at least partially within the screen AND
 		 - Widget is at least partially within its parent

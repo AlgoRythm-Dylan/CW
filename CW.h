@@ -242,6 +242,7 @@ namespace CW {
 		int scrollX, maxScrollX, scrollY, maxScrollY;
 		ScrollBar *verticalScrollbar, *horizontalScrollBar;
 		int xScrollDisabled = 1, yScrollDisabled = 1;
+		int cullChildren = 0, disableCulling = 0;
 		Widget();
 		virtual void render();
 		virtual void render(const Box&);
