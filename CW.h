@@ -262,7 +262,8 @@ namespace CW {
 	};
 
 	struct Grid : Widget {
-		GridLayoutManager *layoutManager;
+		GridLayoutManager *layoutManager = nullptr;
+		Grid();
 		virtual int render();
 		virtual int render(const Box&);
 		virtual void inflate();

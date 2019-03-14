@@ -7,46 +7,27 @@ int main(){
 	// Init and create some colors to use
 	init();
 	ColorPair green(RED, GREEN), red(GREEN, RED), yellow(BLUE, YELLOW), blue(YELLOW, BLUE);
+	ColorPair white(BLACK, WHITE), black(WHITE, BLACK);
+
 	body->color = green;
 
-	StackingLayoutManager *layout = new StackingLayoutManager();
-	layout->orientation = Orientation::Vertical;
-	body->setLayoutManager(layout);
+	// Replace CW::body with a grid
+	Grid* grid = new Grid();
+	delete body;
+	body = grid;
 
-	// Move the body widget to (1, 1)
-	body->x->value = 10;
-	body->y->value = 10;
-	
-	// Reads as "100% - 2cells (px)"
-	CalculatedUnit *bodySize = new CalculatedUnit(new Unit(100, UNIT_PERCENT), '-', new Unit(20, UNIT_CELL));
+	GridDefinition r(1, UNIT_GRID), c1(1, UNIT_GRID), c2(20, UNIT_CELL);
 
-	// Destroy the basic Units that the body uses for width and height, and replace them
-	delete body->width;
-	delete body->height;
-	body->width = bodySize;
-	body->height = bodySize;
+	grid->layoutManager->addRowDefinition(r);
+	grid->layoutManager->addColumnDefinition(c1);
+	grid->layoutManager->addColumnDefinition(c2);
 
-	// Re-inflate the body after size changes
-	body->inflate();
+	Widget *canvasHolder = new Widget();
+	canvasHolder->color = black;
+	grid->layoutManager->addChild(canvasHolder, 0, 0);
 
-	// Create the clipper for the body. This will hide overflowing widgets.
-	Rectangle *bodyClipper = new Rectangle();
-	//body->clipShape = bodyClipper;
-
-	// Create the test button
-	Button *button = new Button();
-	button->color = red;
-	
-	button->width->value = 15;
-	button->width->type = UNIT_CELL;
-	button->height->value = 3;
-	button->height->type = UNIT_CELL;
-
-	body->addChild(button);
-
-	// Scroll the body down one cell
-	body->scrollY = 0;
-	body->scrollX = 0;
+	grid->color = white;
+	grid->inflate();
 
 	// Start the graphics loop
 	loop();

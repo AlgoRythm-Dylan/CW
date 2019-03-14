@@ -592,6 +592,7 @@ namespace CW {
 
 	void GridLayoutManager::inflateDefinitions(std::vector<GridDefinition>& gridTemplate, int availableSpace){
 		// Add up all of the definitions that are of type grid
+		if(gridTemplate.size() == 0) return;
 		double totalGridWeight = 0.0;
 		int i = 0;
 		while(i < gridTemplate.size()){
@@ -708,6 +709,7 @@ namespace CW {
 		width = new Unit(100, UNIT_PERCENT);
 		height = new Unit(100, UNIT_PERCENT);
 		layoutManager = new AbsoluteLayoutManager();
+		layoutManager->widget = this;
 		inflate(); // Inflate the widget according to the size of stdscr
 	}
 
@@ -860,13 +862,24 @@ namespace CW {
 		return 1;
 	}
 
+	Grid::Grid(){
+		layoutManager = new GridLayoutManager();
+		layoutManager->widget = this;
+	}
+
 	int Grid::render(){
 		return render(boundingBox);
 	}
 
 	int Grid::render(const Box &box){
+		boundingBox = box;
+		if(parent){
+			boundingBox.x -= parent->scrollX;
+			boundingBox.y -= parent->scrollY;
+		}
 		if(!shouldRender()) return 0;
 		clip();
+		Draw::rect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height, color);
 		layoutManager->render();
 		unclip();
 		return 1;
