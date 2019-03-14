@@ -33,29 +33,19 @@ int main(){
 	Rectangle *bodyClipper = new Rectangle();
 	//body->clipShape = bodyClipper;
 
-	// Create some simple widgets to use for testing
-	// A 3x3 red widget
-	Widget *w1 = new Widget();
-	w1->color = red;
-	w1->height->value = 3;
-	w1->height->type = UNIT_CELL;
-	w1->width->value = 3;
-	w1->width->type = UNIT_CELL;
+	// Create the test button
+	Button *button = new Button();
+	button->color = red;
 	
-	// And a 1x1 yellow widget
-	Widget *w2 = new Widget();
-	w2->color = yellow;
-	w2->height->value = 2;
-	w2->height->type = UNIT_CELL;
-	w2->width->value = 2;
-	w2->width->type = UNIT_CELL;
+	button->width->value = 15;
+	button->width->type = UNIT_CELL;
+	button->height->value = 3;
+	button->height->type = UNIT_CELL;
 
-	// Add the widgets to the body
-	body->addChild(w1);
-	body->addChild(w2);
+	body->addChild(button);
 
 	// Scroll the body down one cell
-	body->scrollY = -8;
+	body->scrollY = 0;
 	body->scrollX = 0;
 
 	// Start the graphics loop

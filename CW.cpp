@@ -305,13 +305,36 @@ namespace CW {
 
 	void Text::render(const Box& area){
 		int textPosition = 0;
+		int startX = 0;
+		int startY = 0;
 		for(int i = 0; i < lineBreaks.size(); i++){
 			int lineLength = lineBreaks[i];
 			if(i > 0){
 				lineLength -= lineBreaks[i - 1];
 			}
+			// Deal with the alignment
+			if(horizontalAlignment == Alignment::Start){
+				startX = 0;
+			}
+			else if(horizontalAlignment == Alignment::Middle){
+				startX = (area.width - lineLength) / 2;
+			}
+			else if(horizontalAlignment == Alignment::End){
+				startX = area.width - lineLength;
+			}
+			if(lineBreaks.size() < area.height){
+				if(verticalAlignment == Alignment::Start){
+					startY = 0;
+				}
+				else if(verticalAlignment == Alignment::Middle){
+					startY = (area.height - lineBreaks.size()) / 2;
+				}
+				else if(verticalAlignment == Alignment::End){
+					startY = area.height - lineBreaks.size();
+				}
+			}
 			for(int j = 0; j < lineLength; j++){
-				Draw::point(area.x + j, area.y + i, text[textPosition], color);
+				Draw::point(area.x + j + startX, area.y + i + startY, text[textPosition], color);
 				textPosition++;
 			}
 		}
@@ -704,12 +727,12 @@ namespace CW {
 		}
 	}
 
-	void Widget::render(){
+	int Widget::render(){
 		// For self-placement
-		render(boundingBox);
+		return render(boundingBox);
 	}
 
-	void Widget::render(const Box &box){
+	int Widget::render(const Box &box){
 		// Second step of self-placement, but more importantly,
 		// allows parent widgets (such as grids) to control layout and size
 		boundingBox = box; // Update current bouding box, for children to render into
@@ -717,11 +740,12 @@ namespace CW {
 			boundingBox.x -= parent->scrollX;
 			boundingBox.y -= parent->scrollY;
 		}
-		if(!shouldRender()) return;
+		if(!shouldRender()) return 0;
 		clip();
 		Draw::rect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height, color);
 		layoutManager->render();
 		unclip();
+		return 1;
 	}
 
 	void Widget::addChild(Widget *widget){
@@ -836,15 +860,16 @@ namespace CW {
 		return 1;
 	}
 
-	void Grid::render(){
-		render(boundingBox);
+	int Grid::render(){
+		return render(boundingBox);
 	}
 
-	void Grid::render(const Box &box){
-		if(!shouldRender()) return;
+	int Grid::render(const Box &box){
+		if(!shouldRender()) return 0;
 		clip();
 		layoutManager->render();
 		unclip();
+		return 1;
 	}
 
 	void Grid::handleEvent(Event &e){
@@ -864,6 +889,29 @@ namespace CW {
 
 	void Grid::addChild(Widget* child){
 		layoutManager->addChild(child);
+	}
+
+	Button::Button(){
+		text = new Text("Hello world!");
+		text->verticalAlignment = Alignment::Middle;
+		text->horizontalAlignment = Alignment::Middle;
+	}
+
+	int Button::render(){
+		return render(boundingBox);
+	}
+
+	int Button::render(const Box& box){
+		if(Widget::render(box)){
+			text->render(boundingBox);
+			return 1;
+		}
+		return 0;
+	}
+
+	void Button::inflate(){
+		Widget::inflate();
+		text->parseLineBreaks(icoord(boundingBox.width, boundingBox.height));
 	}
 
 	Event::Event(){

@@ -244,8 +244,8 @@ namespace CW {
 		int xScrollDisabled = 1, yScrollDisabled = 1;
 		int cullChildren = 0, disableCulling = 0;
 		Widget();
-		virtual void render();
-		virtual void render(const Box&);
+		virtual int render();
+		virtual int render(const Box&);
 		virtual void inflate();
 		virtual void addChild(Widget*);
 		Widget* parent;
@@ -255,20 +255,27 @@ namespace CW {
 		virtual void handleEvent(Event&);
 		virtual int contains(int, int);
 		// What will be the dimensions of the widget, given some hypothetical available space to render to?
-		void setLayoutManager(LayoutManager*);
+		virtual void setLayoutManager(LayoutManager*);
 		void clip();
 		void unclip();
 		int shouldRender();
 	};
 
-	// TODO: Make grids just a layout manager, and make grids a widget with that layout
 	struct Grid : Widget {
 		GridLayoutManager *layoutManager;
-		virtual void render();
-		virtual void render(const Box&);
+		virtual int render();
+		virtual int render(const Box&);
 		virtual void inflate();
 		virtual void addChild(Widget*);
 		virtual void handleEvent(Event&);
+	};
+
+	struct Button : Widget {
+		Text *text = nullptr;
+		Button();
+		virtual int render();
+		virtual int render(const Box&);
+		virtual void inflate();
 	};
 
 	// Extern variables
