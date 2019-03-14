@@ -74,6 +74,7 @@ namespace CW {
 		Color *foreground, *background;
 		ColorPair();
 		ColorPair(Color&, Color&);
+		short toAttribute();
 		void activate();
 		static int nextid();
 	};
@@ -97,9 +98,17 @@ namespace CW {
 		int getNextLineBreak(int); // Helper function
 	};
 
+	struct CharInfo {
+		short attributes;
+		int character;
+		CharInfo();
+		CharInfo(const CharInfo&);
+		static void put(int, int, const CharInfo&);
+	};
+
 	// Text with colors and other attributes!
 	struct RichText : Text {
-
+		// Future plans!
 	};
 
 	namespace Draw {
@@ -277,6 +286,19 @@ namespace CW {
 		virtual int render();
 		virtual int render(const Box&);
 		virtual void inflate();
+	};
+
+	// TODO: make double buffered mode
+	struct Canvas : Widget {
+		CharInfo *buffer = nullptr;
+		icoord bufferSize;
+		Canvas();
+		Canvas(int, int);
+		void size(int, int);
+		virtual int render();
+		virtual int render(const Box &);
+		virtual void inflate();
+		void clear();
 	};
 
 	// Extern variables

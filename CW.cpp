@@ -210,6 +210,10 @@ namespace CW {
 		return -1;
 	}
 
+	short ColorPair::toAttribute(){
+		return COLOR_PAIR(id);
+	}
+
 	void ColorPair::activate(){
 		if(id == -1){
 			id = nextid();
@@ -313,20 +317,16 @@ namespace CW {
 				lineLength -= lineBreaks[i - 1];
 			}
 			// Deal with the alignment
-			if(horizontalAlignment == Alignment::Start){
-				startX = 0;
-			}
-			else if(horizontalAlignment == Alignment::Middle){
+			startX = 0;
+			if(horizontalAlignment == Alignment::Middle){
 				startX = (area.width - lineLength) / 2;
 			}
 			else if(horizontalAlignment == Alignment::End){
 				startX = area.width - lineLength;
 			}
 			if(lineBreaks.size() < area.height){
-				if(verticalAlignment == Alignment::Start){
-					startY = 0;
-				}
-				else if(verticalAlignment == Alignment::Middle){
+				startY = 0;
+				if(verticalAlignment == Alignment::Middle){
 					startY = (area.height - lineBreaks.size()) / 2;
 				}
 				else if(verticalAlignment == Alignment::End){
@@ -338,6 +338,21 @@ namespace CW {
 				textPosition++;
 			}
 		}
+	}
+
+	CharInfo::CharInfo(){
+		attributes = 0;
+		character = ' ';
+	}
+
+	CharInfo::CharInfo(const CharInfo& otherCharInfo){
+		attributes = otherCharInfo.attributes;
+		character = otherCharInfo.character;
+	}
+
+	void CharInfo::put(int x, int y, const CharInfo& charInfo){
+		attron(charInfo.attributes);
+		mvaddch(y, x, charInfo.character);
 	}
 
 	icoord::icoord(){
@@ -525,15 +540,45 @@ namespace CW {
 	}
 
 	void StackingLayoutManager::render(){
-		if(!widget) return;
+		if(!widget) return; // Nothing to render to
+		if(widget->children.size() == 0) return; // Nothing to render
+		// Calculate the width and height of all children
+		int totalLayoutWidth = 0;
+		int totalLayoutHeight = 0;
+		int startX = 0;
+		int startY = 0;
 		if(orientation == Orientation::Vertical){
 			// Stack vertically
+			// Sum the heights, find the max of the widths
+			totalLayoutWidth = widget->children[0]->boundingBox.width;
+			for(int i = 0; i < widget->children.size(); i++){
+				if(widget->children[i]->boundingBox.width > totalLayoutWidth){
+					totalLayoutWidth = widget->children[i]->boundingBox.width;
+				}
+				totalLayoutHeight += widget->children[i]->boundingBox.height;
+			}
+			// According to the alignment, add startY
+			if(verticalAlignment == Alignment::Middle &&
+			   totalLayoutHeight < widget->boundingBox.height){
+				startY = (widget->boundingBox.height - totalLayoutHeight) / 2;
+			}
+			else if(verticalAlignment == Alignment::End &&
+				totalLayoutHeight < widget->boundingBox.height){
+				startY = widget->boundingBox.height - totalLayoutHeight;
+			}
 			int currentY = 0;
 			for(int i = 0; i < widget->children.size(); i++){
 				Widget *currentWidget = widget->children[i];
+				startX = 0;
+				if(horizontalAlignment == Alignment::Middle){
+					startX = (widget->boundingBox.width - currentWidget->boundingBox.width) / 2;
+				}
+				else if(horizontalAlignment == Alignment::End){
+					startX = widget->boundingBox.width - currentWidget->boundingBox.width;
+				}
 				currentWidget->render(Box(
-					widget->boundingBox.x - currentWidget->scrollX,
-					widget->boundingBox.y + currentY - currentWidget->scrollY,
+					widget->boundingBox.x - currentWidget->scrollX + startX,
+					widget->boundingBox.y + currentY - currentWidget->scrollY + startY,
 					currentWidget->boundingBox.width,
 					currentWidget->boundingBox.height
 				));
@@ -925,6 +970,61 @@ namespace CW {
 	void Button::inflate(){
 		Widget::inflate();
 		text->parseLineBreaks(icoord(boundingBox.width, boundingBox.height));
+	}
+
+	Canvas::Canvas(){
+		size(10, 10);
+	}
+
+	Canvas::Canvas(int bufferWidth, int bufferHeight){
+		size(bufferWidth, bufferHeight);
+	}
+
+	void Canvas::size(int bufferWidth, int bufferHeight){
+		bufferSize.x = bufferWidth;
+		bufferSize.y = bufferHeight;
+		if(buffer){
+			delete[] buffer;
+		}
+		buffer = new CharInfo[bufferWidth * bufferHeight];
+		clear();
+	}
+
+	int Canvas::render(){
+		return render(boundingBox);
+	}
+
+	int Canvas::render(const Box& box){
+		boundingBox = box;
+		if(parent){
+			boundingBox.x -= parent->scrollX;
+			boundingBox.y -= parent->scrollY;
+		}
+		if(!shouldRender()) return 0;
+		clip();
+		for(int y = 0; y < bufferSize.y; y++){
+			for(int x = 0; x < bufferSize.x; x++){
+				CharInfo::put(boundingBox.x + x, boundingBox.y + y,
+					      buffer[(y * bufferSize.x) + x]);
+			}
+		}
+		unclip();
+		return 1;
+	}
+
+	void Canvas::inflate(){
+		Widget::inflate(); // For x and y
+		boundingBox.width = bufferSize.x;
+		boundingBox.height = bufferSize.y;
+	}
+
+	void Canvas::clear(){
+		CharInfo clearChar;
+		clearChar.character = ' ';
+		clearChar.attributes = color.toAttribute();
+		for(int i = 0; i < bufferSize.x * bufferSize.y; i++){
+			buffer[i] = clearChar;
+		}
 	}
 
 	Event::Event(){

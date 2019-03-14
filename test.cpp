@@ -24,7 +24,16 @@ int main(){
 
 	Widget *canvasHolder = new Widget();
 	canvasHolder->color = black;
+	StackingLayoutManager *canvasHolderLayout = new StackingLayoutManager();
+	canvasHolderLayout->verticalAlignment = Alignment::Middle;
+	canvasHolderLayout->horizontalAlignment = Alignment::Middle;
+	canvasHolder->setLayoutManager(canvasHolderLayout);
 	grid->layoutManager->addChild(canvasHolder, 0, 0);
+
+	Canvas *canvas = new Canvas(100, 25);
+	canvas->color = white;
+	canvas->clear();
+	canvasHolder->addChild(canvas);
 
 	grid->color = white;
 	grid->inflate();
