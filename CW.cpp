@@ -558,13 +558,13 @@ namespace CW {
 				totalLayoutHeight += widget->children[i]->boundingBox.height;
 			}
 			// According to the alignment, add startY
-			if(verticalAlignment == Alignment::Middle &&
-			   totalLayoutHeight < widget->boundingBox.height){
-				startY = (widget->boundingBox.height - totalLayoutHeight) / 2;
-			}
-			else if(verticalAlignment == Alignment::End &&
-				totalLayoutHeight < widget->boundingBox.height){
-				startY = widget->boundingBox.height - totalLayoutHeight;
+			if(totalLayoutHeight < widget->boundingBox.height){
+				if(verticalAlignment == Alignment::Middle){
+					startY = (widget->boundingBox.height - totalLayoutHeight) / 2;
+				}
+				else if(verticalAlignment == Alignment::End){
+					startY = widget->boundingBox.height - totalLayoutHeight;
+				}
 			}
 			int currentY = 0;
 			for(int i = 0; i < widget->children.size(); i++){
@@ -587,12 +587,35 @@ namespace CW {
 		}
 		else if(orientation == Orientation::Horizontal){
 			// Stack sideways
+			// Sum the widths, find the max of the heights
+			totalLayoutHeight = widget->children[0]->boundingBox.height;
+			for(int i = 0; i < widget->children.size(); i++){
+				if(widget->children[i]->boundingBox.height > totalLayoutHeight){
+					totalLayoutHeight = widget->children[i]->boundingBox.height;
+				}
+				totalLayoutWidth += widget->children[i]->boundingBox.width;
+			}
+			if(totalLayoutWidth < widget->boundingBox.width){
+				if(horizontalAlignment == Alignment::Middle){
+					startX = (widget->boundingBox.width - totalLayoutWidth) / 2;	
+				}
+				else if(horizontalAlignment == Alignment::End){
+					startX = widget->boundingBox.width - totalLayoutWidth;
+				}
+			}
 			int currentX = 0;
 			for(int i = 0; i < widget->children.size(); i++){
 				Widget *currentWidget = widget->children[i];
+				startY = 0;
+				if(verticalAlignment == Alignment::Middle){
+					startY = (widget->boundingBox.height - currentWidget->boundingBox.height) / 2;
+				}
+				else if(verticalAlignment == Alignment::End){
+					startY = widget->boundingBox.height - currentWidget->boundingBox.height;
+				}
 				currentWidget->render(Box(
-					widget->boundingBox.x + currentX - currentWidget->scrollX,
-					widget->boundingBox.y - currentWidget->scrollY,
+					widget->boundingBox.x + currentX - currentWidget->scrollX + startX,
+					widget->boundingBox.y - currentWidget->scrollY + startY,
 					currentWidget->boundingBox.width,
 					currentWidget->boundingBox.height
 				));

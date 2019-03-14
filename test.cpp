@@ -25,6 +25,7 @@ int main(){
 	Widget *canvasHolder = new Widget();
 	canvasHolder->color = black;
 	StackingLayoutManager *canvasHolderLayout = new StackingLayoutManager();
+	canvasHolderLayout->orientation = Orientation::Horizontal;
 	canvasHolderLayout->verticalAlignment = Alignment::Middle;
 	canvasHolderLayout->horizontalAlignment = Alignment::Middle;
 	canvasHolder->setLayoutManager(canvasHolderLayout);
