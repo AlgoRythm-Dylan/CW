@@ -31,7 +31,7 @@ int main(){
 	canvasHolder->setLayoutManager(canvasHolderLayout);
 	grid->layoutManager->addChild(canvasHolder, 0, 0);
 
-	Canvas *canvas = new Canvas(100, 25);
+	Canvas *canvas = new Canvas(80, 25);
 	canvas->color = white;
 	canvas->clear();
 	canvasHolder->addChild(canvas);
