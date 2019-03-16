@@ -1124,7 +1124,7 @@ namespace CW {
 	ColorPair defaultColorPair;
 	Color BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE;
 	int fps, screenWidth, screenHeight, running, textInputMode = 0;
-	Widget *body, focusedWidget = nullptr;
+	Widget *body, *focusedWidget = nullptr;
 	std::vector<Shape*> clipShapes;
 
 }

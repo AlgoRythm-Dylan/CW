@@ -170,6 +170,11 @@ namespace CW {
 		KeyEvent(int); // Constructor taking key
 	};
 
+	struct EventListener {
+		std::function<void(Event&)> handler;
+		int disabled = 0;
+	};
+
 	// Abstract class to describe shapes
 	struct Shape {
 		Box rect;
@@ -307,8 +312,8 @@ namespace CW {
 	extern std::vector<int> usedPairs;
 	extern ColorPair defaultColorPair;
 	extern Color BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE;
-	extern int fps, screenWidth, screenHeight, running;
-	extern Widget* body;
+	extern int fps, screenWidth, screenHeight, running, textInputMode;
+	extern Widget *body, *focusedWidget;
 	extern std::vector<Shape*> clipShapes;
 
 }
