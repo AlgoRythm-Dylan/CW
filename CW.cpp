@@ -16,12 +16,13 @@ namespace CW {
 		noecho();
 		nodelay(stdscr, 1);
 		mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+		mouseinterval(75);
+		curs_set(0);
+		// Enable mouse movement reporting
+		printf("\033[?1003h");
+		fflush(stdout);
 		// This will need to be played with and will be different from
 		// emulator to emulator and system to system
-		mouseinterval(75);
-		// Some raw stuff
-		printf("\033[?1003h\n");
-		fflush(stdout);
 		// Set up the ASCII colors
 		BLACK = Color(0);
 		RED = Color(1);
@@ -31,13 +32,10 @@ namespace CW {
 		MAGENTA = Color(5);
 		CYAN = Color(6);
 		WHITE = Color(7);
-		// Make the cursor invisible initially
-		curs_set(0);
 		// Setup loop
 		running = 0;
 		updateScreenSize();
 		body = new Widget();
-		//clipShapes = std::vector<Shape*>();
 	}
 
 	void loop(){
@@ -79,12 +77,16 @@ namespace CW {
 			}
 			else if(ch == KEY_MOUSE){
 				MEVENT me;
+				stopLoop();
+				end();
 				if(getmouse(&me) == OK){
 					MouseEvent e;
 					e.x = me.x;
 					e.y = me.y;
 					if(me.bstate & REPORT_MOUSE_POSITION){
 						e.type = EventType::MouseMove;
+						//stopLoop();
+						//end();
 					}
 					else if(me.bstate & BUTTON1_PRESSED ||
 						me.bstate & BUTTON2_PRESSED ||
@@ -114,11 +116,11 @@ namespace CW {
 	}
 
 	void end(){
+		// Restore to standard mouse reporting
+		printf("\033[?1003l");
+		fflush(stdout);
 		// End curses mode
 		endwin();
-		// Restore to standard mouse reporting
-		printf("\033[?10031h\n");
-		fflush(stdout);
 	}
 
 	void updateScreenSize(){
@@ -146,6 +148,27 @@ namespace CW {
 		t1.tv_nsec = nanoseconds;
 		nanosleep(&t1, &t2);
 		return (t2.tv_sec * 1000) + (t2.tv_nsec / 1000000);
+	}
+
+	Widget* findEventTargetAt(int x, int y){
+		if(!body->contains(x, y)) return nullptr;
+		Widget *currentTarget = body;
+		int i = currentTarget->children.size();
+		while(i >= 0){
+			if(currentTarget->children[i]->contains(x, y)){
+				currentTarget = currentTarget->children[i];
+				if(currentTarget->children.size()){
+					// If the new target has any children, keep going
+					i = currentTarget->children.size();
+					continue;
+				}
+				else{
+					break; // We're done here
+				}
+			}
+			i--;
+		}
+		return currentTarget;
 	}
 	
 	Color::Color(){
@@ -838,7 +861,11 @@ namespace CW {
 				children[i]->handleEvent(e);
 				i++;
 			}
-		}	
+		}
+		else if(e.type == EventType::MouseMove){
+			stopLoop();
+			end();
+		}
 	}
 
 	// Used for event "collisions" - does a point fall within this widget

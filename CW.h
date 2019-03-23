@@ -17,6 +17,7 @@ namespace CW {
 	void dispatchEvents();
 	void updateScreenSize();
 	void setBody(Widget*);
+	Widget* findEventTargetAt(int, int);
 
 	long sleep(long);
 
@@ -133,6 +134,7 @@ namespace CW {
 	// Event system
 
 	enum EventType {
+		Resize,
 		WindowResize,
 		ParentResize,
 		Mouse,
@@ -153,6 +155,7 @@ namespace CW {
 		Event(EventType); // Generic-as-it-gets event
 		Event(EventType, int, int); // (Usually) EventType at position x, y
 		void stop();
+		Widget *target = nullptr;
 	};
 
 	struct MouseEvent : Event {
@@ -170,9 +173,22 @@ namespace CW {
 		KeyEvent(int); // Constructor taking key
 	};
 
+	// NOTE: The event system is likely to be re-written after some testing
+
 	struct EventListener {
 		std::function<void(Event&)> handler;
 		int disabled = 0;
+		EventType type = EventType::Generic;
+	};
+
+	struct MouseEventListener : EventListener {
+		std::function<void(MouseEvent&)> handler;
+		EventType type = EventType::Mouse;
+	};
+
+	struct KeyEventListener : EventListener {
+		std::function<void(KeyEvent&)> handler;
+		EventType type  = EventType::Key;
 	};
 
 	// Abstract class to describe shapes
@@ -194,7 +210,7 @@ namespace CW {
 		virtual void render() = 0;
 	};
 
-	// Basic layout manager, perhaps just a bit verbose. No, self-documenting.
+	// Basic layout manager, perhaps just a bit verbose. No, "self-documenting".
 	struct AbsoluteLayoutManager : LayoutManager {
 		virtual void render();
 	};
@@ -258,6 +274,7 @@ namespace CW {
 		ScrollBar *verticalScrollbar, *horizontalScrollBar;
 		int xScrollDisabled = 1, yScrollDisabled = 1;
 		int cullChildren = 0, disableCulling = 0;
+		std::string name;
 		Widget();
 		virtual int render();
 		virtual int render(const Box&);
