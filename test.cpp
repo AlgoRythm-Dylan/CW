@@ -29,12 +29,22 @@ int main(){
 	canvasHolderLayout->verticalAlignment = Alignment::Middle;
 	canvasHolderLayout->horizontalAlignment = Alignment::Middle;
 	canvasHolder->setLayoutManager(canvasHolderLayout);
-	grid->layoutManager->addChild(canvasHolder, 0, 0);
+	grid->addChild(canvasHolder, 0, 0);
 
 	Canvas *canvas = new Canvas(80, 25);
 	canvas->color = white;
 	canvas->clear();
 	canvasHolder->addChild(canvas);
+
+	MouseEventListener *canvasListener = new MouseEventListener();
+	canvasListener->handle = [&white, canvas](MouseEvent *event){
+		CharInfo info;
+		info.character = 'x';
+		info.attributes = white.toAttribute();
+		icoord relativeCoords = event->relativeTo(canvas);
+		canvas->point(relativeCoords.x, relativeCoords.y, info);
+	};
+	canvas->mouseEventListeners.push_back(canvasListener);
 
 	grid->color = white;
 	grid->inflate();

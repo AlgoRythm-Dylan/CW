@@ -16,11 +16,11 @@ namespace CW {
 		noecho();
 		nodelay(stdscr, 1);
 		mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
-		mouseinterval(75);
+		mouseinterval(0);
 		curs_set(0);
 		// Enable mouse movement reporting
-		printf("\033[?1003h");
-		fflush(stdout);
+		//printf("\033[?1003h");
+		//fflush(stdout);
 		// This will need to be played with and will be different from
 		// emulator to emulator and system to system
 		// Set up the ASCII colors
@@ -60,7 +60,8 @@ namespace CW {
 		}
 	}
 
-	// Simple, eh?
+	// Simple, eh? Of course, there might be more to this in the future. The function just abstracts
+	// away the process. Abstraction is best!
 	void stopLoop(){
 		running = false;
 	}
@@ -73,20 +74,16 @@ namespace CW {
 				// Can only get screen size at current time afaik
 				updateScreenSize();
 				Event e(EventType::WindowResize, screenWidth, screenHeight);
-				body->handleEvent(e);
+				body->handleEvent(&e);
 			}
 			else if(ch == KEY_MOUSE){
 				MEVENT me;
-				stopLoop();
-				end();
 				if(getmouse(&me) == OK){
 					MouseEvent e;
 					e.x = me.x;
 					e.y = me.y;
 					if(me.bstate & REPORT_MOUSE_POSITION){
 						e.type = EventType::MouseMove;
-						//stopLoop();
-						//end();
 					}
 					else if(me.bstate & BUTTON1_PRESSED ||
 						me.bstate & BUTTON2_PRESSED ||
@@ -100,8 +97,10 @@ namespace CW {
 						me.bstate & BUTTON4_RELEASED){
 						e.type = EventType::MouseUp;
 					}
-					// TODO: Finish
-					body->handleEvent(e);
+					Widget *target = findEventTargetAt(e.x, e.y);
+					if(target){
+						target->handleEvent(&e);
+					}
 				}
 			}
 			else if(ch == 'f' || ch == 'q'){
@@ -109,7 +108,7 @@ namespace CW {
 			}
 			else{
 				KeyEvent e(ch);
-				body->handleEvent(e);
+				body->handleEvent(&e);
 			}
 			ch = getch();
 		}
@@ -117,8 +116,8 @@ namespace CW {
 
 	void end(){
 		// Restore to standard mouse reporting
-		printf("\033[?1003l");
-		fflush(stdout);
+		//printf("\033[?1003l");
+		//fflush(stdout);
 		// End curses mode
 		endwin();
 	}
@@ -153,13 +152,13 @@ namespace CW {
 	Widget* findEventTargetAt(int x, int y){
 		if(!body->contains(x, y)) return nullptr;
 		Widget *currentTarget = body;
-		int i = currentTarget->children.size();
+		int i = currentTarget->children.size() - 1;
 		while(i >= 0){
 			if(currentTarget->children[i]->contains(x, y)){
 				currentTarget = currentTarget->children[i];
 				if(currentTarget->children.size()){
 					// If the new target has any children, keep going
-					i = currentTarget->children.size();
+					i = currentTarget->children.size() - 1;
 					continue;
 				}
 				else{
@@ -849,29 +848,30 @@ namespace CW {
 		widget->inflate();
 	}
 
-	void Widget::handleEvent(Event &e){
-		if(e.type == EventType::WindowResize){
+	void Widget::handleEvent(Event *e){
+		if(e->type == EventType::WindowResize){
 			if(!parent){
 				// If this is the body widget, there will be no parent,
 				// and this widget will need to react to the window size
 				inflate();
 			}
 			int i = 0;
-			while(i < children.size() && !e.stopped){
+			while(i < children.size() && !e->stopped){
 				children[i]->handleEvent(e);
 				i++;
 			}
 		}
-		else if(e.type == EventType::MouseMove){
-			stopLoop();
-			end();
+		else if(e->type == EventType::MouseDown){
+			for(int i = 0; i < mouseEventListeners.size(); i++){
+				mouseEventListeners[i]->handle((MouseEvent*) e);
+			}	
 		}
 	}
 
 	// Used for event "collisions" - does a point fall within this widget
 	int Widget::contains(int x, int y){
-		if(x >= boundingBox.x && x <= boundingBox.width){
-			if(y >= boundingBox.y && y <= boundingBox.height){
+		if(x >= boundingBox.x && x <= boundingBox.x + boundingBox.width){
+			if(y >= boundingBox.y && y <= boundingBox.y + boundingBox.height){
 				return 1; // Coords are contained in this widget
 			}
 		}
@@ -980,8 +980,8 @@ namespace CW {
 		return 1;
 	}
 
-	void Grid::handleEvent(Event &e){
-		if(e.type == EventType::WindowResize){
+	void Grid::handleEvent(Event *e){
+		if(e->type == EventType::WindowResize){
 			// Just react to resize if this widget is the body
 			if(!parent){
 				inflate();
@@ -996,7 +996,13 @@ namespace CW {
 	};
 
 	void Grid::addChild(Widget* child){
+		children.push_back(child);
 		layoutManager->addChild(child);
+	}
+
+	void Grid::addChild(Widget* child, int row, int column){
+		children.push_back(child);
+		layoutManager->addChild(child, row, column);
 	}
 
 	Button::Button(){
@@ -1077,6 +1083,10 @@ namespace CW {
 		}
 	}
 
+	void Canvas::point(int x, int y, CharInfo info){
+		buffer[(y * bufferSize.x) + x] = info;
+	}
+
 	Event::Event(){
 		type = EventType::Invalid;
 		x = -1;
@@ -1132,6 +1142,10 @@ namespace CW {
 		this->x = x;
 		this->y = y;
 		stopped = 0;
+	}
+
+	icoord MouseEvent::relativeTo(Widget* widget){
+		return icoord(x - widget->boundingBox.x, y - widget->boundingBox.y);
 	}
 
 	KeyEvent::KeyEvent(){

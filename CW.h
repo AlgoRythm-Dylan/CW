@@ -165,6 +165,7 @@ namespace CW {
 		MouseEvent(EventType); // Type
 		MouseEvent(EventType, int, int); // Type, x, y
 		MouseEvent(EventType, int, int, int); // Type, x, y, count
+		icoord relativeTo(Widget*);
 	};
 
 	struct KeyEvent : Event {
@@ -175,21 +176,26 @@ namespace CW {
 
 	// NOTE: The event system is likely to be re-written after some testing
 
+	typedef std::function<void(Event*)> EventHandler;
+	typedef std::function<void(MouseEvent*)> MouseEventHandler;
+	typedef std::function<void(KeyEvent*)> KeyEventHandler;
+
 	struct EventListener {
-		std::function<void(Event&)> handler;
+		EventHandler handle;
 		int disabled = 0;
 		EventType type = EventType::Generic;
 	};
 
 	struct MouseEventListener : EventListener {
-		std::function<void(MouseEvent&)> handler;
+		MouseEventHandler handle;
 		EventType type = EventType::Mouse;
 	};
 
 	struct KeyEventListener : EventListener {
-		std::function<void(KeyEvent&)> handler;
+		KeyEventHandler handle;
 		EventType type  = EventType::Key;
 	};
+
 
 	// Abstract class to describe shapes
 	struct Shape {
@@ -275,6 +281,9 @@ namespace CW {
 		int xScrollDisabled = 1, yScrollDisabled = 1;
 		int cullChildren = 0, disableCulling = 0;
 		std::string name;
+		std::vector<EventListener*> eventListeners;
+		std::vector<MouseEventListener*> mouseEventListeners;
+		std::vector<KeyEventListener*> keyEventListeners;
 		Widget();
 		virtual int render();
 		virtual int render(const Box&);
@@ -284,7 +293,7 @@ namespace CW {
 		Box boundingBox;
 		std::vector<Widget*> children;
 		ColorPair color;
-		virtual void handleEvent(Event&);
+		virtual void handleEvent(Event*);
 		virtual int contains(int, int);
 		// What will be the dimensions of the widget, given some hypothetical available space to render to?
 		virtual void setLayoutManager(LayoutManager*);
@@ -300,7 +309,8 @@ namespace CW {
 		virtual int render(const Box&);
 		virtual void inflate();
 		virtual void addChild(Widget*);
-		virtual void handleEvent(Event&);
+		virtual void addChild(Widget*, int, int);
+		virtual void handleEvent(Event*);
 	};
 
 	struct Button : Widget {
@@ -322,6 +332,7 @@ namespace CW {
 		virtual int render(const Box &);
 		virtual void inflate();
 		void clear();
+		void point(int, int, CharInfo);
 	};
 
 	// Extern variables
