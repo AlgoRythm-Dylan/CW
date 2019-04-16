@@ -35,6 +35,8 @@ namespace CW {
 		Box(const Box&); // Copy constructor
 		Box(int, int, int, int); // x, y, width, height
 		void values(int, int, int, int); // Easy way to set all values
+		int operator==(const Box&) const;
+		int operator!=(const Box&) const;
 	};
 
 	const char UNIT_CELL = 'C'; // Cell
@@ -150,7 +152,7 @@ namespace CW {
 	struct Event {
 		EventType type;
 		int x, y;
-		int stopped; // Boolean. Is the event stopped/ cancelled?
+		int stopped = 0; // Boolean. Is the event stopped/ cancelled?
 		Event();
 		Event(EventType); // Generic-as-it-gets event
 		Event(EventType, int, int); // (Usually) EventType at position x, y
@@ -249,7 +251,7 @@ namespace CW {
 		GridChild(Widget*, int, int);
 		int column, row;
 		int colSpan, rowSpan;
-		Widget* child;
+		Widget *child;
 	};
 
 	struct GridLayoutManager : LayoutManager {
@@ -319,6 +321,7 @@ namespace CW {
 		virtual int render();
 		virtual int render(const Box&);
 		virtual void inflate();
+		virtual void handleEvent(Event*);
 	};
 
 	// TODO: make double buffered mode

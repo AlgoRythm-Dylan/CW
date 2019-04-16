@@ -265,7 +265,6 @@ namespace CW {
 		verticalAlignment = Alignment::Start;
 		horizontalAlignment = Alignment::Start;
 		text = "";
-		lineBreaks = std::vector<int>();
 		color = defaultColorPair;
 	}
 
@@ -273,16 +272,16 @@ namespace CW {
 		verticalAlignment = Alignment::Start;
 		horizontalAlignment = Alignment::Start;
 		this->text = text;
-		lineBreaks = std::vector<int>();
 		color = defaultColorPair;
 	}
 
 	void Text::parseLineBreaks(const icoord& boundaries){
+		if(boundaries.x <= 0 || boundaries.y <= 0) return;
 		// I always have trouble with this algorithm
 		lineBreaks.clear();
 		int currentPosition = 0;
 		int currentPositionInLine = 0;
-		while(currentPosition < text.length()){
+		while(currentPosition < text.length() && lineBreaks.size() < boundaries.y){
 			if(text[currentPosition] == '\n'){
 				// This is an explicit line break. Just do it.
 				lineBreaks.push_back(currentPosition);
@@ -303,7 +302,20 @@ namespace CW {
 				if(lengthOfNextWord > boundaries.x){
 					// It doesn't fits because its TOO BIG.
 					// Split it up. This is gonna need a loop of it's own.
-					// TODO
+					int wordLeftToSplit = lengthOfNextWord;
+					while(wordLeftToSplit > 0 && lineBreaks.size() < boundaries.y){
+						if(wordLeftToSplit >= boundaries.x){
+							currentPosition += boundaries.x - currentPositionInLine;
+							lineBreaks.push_back(currentPosition);
+							wordLeftToSplit -= boundaries.x - currentPositionInLine;
+							currentPositionInLine = 0;
+						}
+						else{
+							currentPosition += wordLeftToSplit;
+							currentPositionInLine += wordLeftToSplit;
+							wordLeftToSplit = 0;
+						}
+					}
 				}
 				else{
 					// It will fits on the next line!
@@ -331,32 +343,32 @@ namespace CW {
 
 	void Text::render(const Box& area){
 		int textPosition = 0;
-		int startX = 0;
-		int startY = 0;
+		int startX = area.x;
+		int startY = area.y;
 		for(int i = 0; i < lineBreaks.size(); i++){
 			int lineLength = lineBreaks[i];
 			if(i > 0){
 				lineLength -= lineBreaks[i - 1];
 			}
 			// Deal with the alignment
-			startX = 0;
+			startX = area.x;
 			if(horizontalAlignment == Alignment::Middle){
-				startX = (area.width - lineLength) / 2;
+				startX += (area.width - lineLength) / 2;
 			}
 			else if(horizontalAlignment == Alignment::End){
-				startX = area.width - lineLength;
+				startX += area.width - lineLength;
 			}
 			if(lineBreaks.size() < area.height){
-				startY = 0;
+				startY = area.y;
 				if(verticalAlignment == Alignment::Middle){
-					startY = (area.height - lineBreaks.size()) / 2;
+					startY += (area.height - lineBreaks.size()) / 2;
 				}
 				else if(verticalAlignment == Alignment::End){
-					startY = area.height - lineBreaks.size();
+					startY += area.height - lineBreaks.size();
 				}
 			}
 			for(int j = 0; j < lineLength; j++){
-				Draw::point(area.x + j + startX, area.y + i + startY, text[textPosition], color);
+				Draw::point(j + startX, i + startY, text[textPosition], color);
 				textPosition++;
 			}
 		}
@@ -418,6 +430,19 @@ namespace CW {
 		this->y = y;
 		this->width = width;
 		this->height = height;
+	}
+
+	int Box::operator==(const Box& otherBox) const{
+		return (
+			x == otherBox.x &&
+			y == otherBox.y &&
+			width == otherBox.width &&
+			height == otherBox.height
+		);
+	}
+
+	int Box::operator!=(const Box& otherBox) const{
+		return !(*this == otherBox);
 	}
 
 	Unit::Unit(){
@@ -817,6 +842,9 @@ namespace CW {
 			boundingBox.width = (int) width->derive(screenWidth);
 			boundingBox.height = (int) height->derive(screenHeight);
 		}
+		for(int i = 0; i < children.size(); i++){
+			children[i]->inflate();
+		}
 	}
 
 	int Widget::render(){
@@ -827,7 +855,12 @@ namespace CW {
 	int Widget::render(const Box &box){
 		// Second step of self-placement, but more importantly,
 		// allows parent widgets (such as grids) to control layout and size
+		int dispatchResize = 0;
+		if(box != boundingBox) dispatchResize = 1;
 		boundingBox = box; // Update current bouding box, for children to render into
+		// Dispatch a resize event to self
+		Event e(EventType::Resize, box.width, box.height);
+		handleEvent(&e);
 		if(parent){
 			boundingBox.x -= parent->scrollX;
 			boundingBox.y -= parent->scrollY;
@@ -860,6 +893,15 @@ namespace CW {
 				children[i]->handleEvent(e);
 				i++;
 			}
+		}
+		else if(e->type == EventType::Resize){
+			Event e(EventType::ParentResize);
+			for(int i = 0; i < children.size(); i++){
+				children[i]->handleEvent(&e);
+			}
+		}
+		else if(e->type == EventType::ParentResize){
+			inflate();
 		}
 		else if(e->type == EventType::MouseDown){
 			for(int i = 0; i < mouseEventListeners.size(); i++){
@@ -1009,6 +1051,7 @@ namespace CW {
 		text = new Text("Hello world!");
 		text->verticalAlignment = Alignment::Middle;
 		text->horizontalAlignment = Alignment::Middle;
+		text->parseLineBreaks(icoord(boundingBox.width, boundingBox.height));
 	}
 
 	int Button::render(){
@@ -1026,6 +1069,13 @@ namespace CW {
 	void Button::inflate(){
 		Widget::inflate();
 		text->parseLineBreaks(icoord(boundingBox.width, boundingBox.height));
+	}
+
+	void Button::handleEvent(Event *e){
+		Widget::handleEvent(e);
+		if(e->type == EventType::Resize){
+			text->parseLineBreaks(icoord(boundingBox.width, boundingBox.height));
+		}
 	}
 
 	Canvas::Canvas(){

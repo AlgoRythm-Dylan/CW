@@ -46,11 +46,25 @@ int main(){
 	};
 	canvas->mouseEventListeners.push_back(canvasListener);
 
+	Button *clearButton = new Button();
+	//grid->addChild(clearButton, 1, 0);
+	clearButton->height->value = 3;
+	clearButton->height->type = UNIT_CELL;
+	clearButton->color = blue;
+
+	Widget *controlsHolder = new Widget();
+	StackingLayoutManager *controlsLayout = new StackingLayoutManager;
+	controlsHolder->setLayoutManager(controlsLayout);
+	controlsHolder->color = yellow;
+	grid->addChild(controlsHolder, 1, 0);
+	controlsHolder->addChild(clearButton);
+
 	grid->color = white;
 	grid->inflate();
 
 	// Start the graphics loop
 	loop();
 	end(); // End when "f" or "q" key is pressed
+
 	return 0;
 }
