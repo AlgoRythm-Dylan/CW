@@ -23,6 +23,7 @@ namespace CW {
 		//fflush(stdout);
 		// This will need to be played with and will be different from
 		// emulator to emulator and system to system
+		// Externs
 		// Set up the ASCII colors
 		BLACK = Color(0);
 		RED = Color(1);
@@ -36,6 +37,8 @@ namespace CW {
 		running = 0;
 		updateScreenSize();
 		body = new Widget();
+		body->inflate();
+		body->focus();
 	}
 
 	void loop(){
@@ -67,17 +70,20 @@ namespace CW {
 	}
 
 	void dispatchEvents(){
-		int ch = getch();
-		while(ch != ERR){
-			if(ch == KEY_RESIZE){
+		InputRecord record = Input::read();
+		while(!record.empty){
+			if(record.type == EventType::WindowResize){
 				// Generate and dispatch a resize event
 				// Can only get screen size at current time afaik
+				//stopLoop();
+				//Draw::clear();
+				//sleep(5000);
 				updateScreenSize();
 				Event e(EventType::WindowResize, screenWidth, screenHeight);
-				body->handleEvent(&e);
+				body->handleEvent(e);
 			}
-			else if(ch == KEY_MOUSE){
-				MEVENT me;
+			else if(record.type == EventType::Mouse){
+				/*MEVENT me;
 				if(getmouse(&me) == OK){
 					MouseEvent e;
 					e.x = me.x;
@@ -101,16 +107,13 @@ namespace CW {
 					if(target){
 						target->handleEvent(&e);
 					}
-				}
+				}*/
 			}
-			else if(ch == 'f' || ch == 'q'){
-				stopLoop();
+			else if(record.type == EventType::Key){
+				KeyEvent e(record.input);
+				body->handleEvent(e);
 			}
-			else{
-				KeyEvent e(ch);
-				body->handleEvent(&e);
-			}
-			ch = getch();
+			record = Input::read();
 		}
 	}
 
@@ -448,12 +451,15 @@ namespace CW {
 	Unit::Unit(){
 		value = 0;
 		derivedValue = 0;
+		isAuto = 0;
 		type = UNIT_CELL;
 	}
 
 	Unit::Unit(double value, char type){
 		this->value = value;
 		this->type = type;
+		isAuto = 0;
+		derivedValue = 0;
 	}
 
 	double Unit::derive(double max){
@@ -470,17 +476,13 @@ namespace CW {
 		}
 	}
 
-	void Unit::operator=(double value){
-		this->value = value;
-	}
-
 	CalculatedUnit::CalculatedUnit(){
-		u1 = new Unit();
-		u2 = new Unit();
+		u1 = std::make_shared<Unit>();
+		u2 = std::make_shared<Unit>();
 		type = '-';
 	}
 
-	CalculatedUnit::CalculatedUnit(Unit *u1, char type, Unit *u2){
+	CalculatedUnit::CalculatedUnit(UnitPtr u1, char type, UnitPtr u2){
 		this->u1 = u1;
 		this->type = type;
 		this->u2 = u2;
@@ -497,6 +499,26 @@ namespace CW {
 		}
 		else{
 			return 0; // Dunno what to do, so here's a 0 for you.
+		}
+	}
+
+	InputRecord::InputRecord(){
+		input = 0;
+		empty = 1;
+	}
+
+	namespace Input {
+		InputRecord read(){
+			InputRecord record;
+			int inp = getch();
+
+			if(inp == ERR) return record; // Short-circuit an empty record
+
+			record.input = inp;
+			record.type = EventType::Key;
+			record.empty = 0;
+			if(inp == KEY_RESIZE) record.type = EventType::WindowResize;
+			return record;
 		}
 	}
 
@@ -819,11 +841,11 @@ namespace CW {
 
 	Widget::Widget(){
 		parent = nullptr;
-		x = new Unit();
-		y = new Unit();
-		width = new Unit(100, UNIT_PERCENT);
-		height = new Unit(100, UNIT_PERCENT);
-		layoutManager = new AbsoluteLayoutManager();
+		x = std::make_shared<Unit>();
+		y = std::make_shared<Unit>();
+		width = std::make_shared<Unit>(100, UNIT_PERCENT);
+		height = std::make_shared<Unit>(100, UNIT_PERCENT);
+		layoutManager = std::make_shared<AbsoluteLayoutManager>();
 		layoutManager->widget = this;
 		inflate(); // Inflate the widget according to the size of stdscr
 	}
@@ -860,7 +882,7 @@ namespace CW {
 		boundingBox = box; // Update current bouding box, for children to render into
 		// Dispatch a resize event to self
 		Event e(EventType::Resize, box.width, box.height);
-		handleEvent(&e);
+		handleEvent(e);
 		if(parent){
 			boundingBox.x -= parent->scrollX;
 			boundingBox.y -= parent->scrollY;
@@ -881,32 +903,50 @@ namespace CW {
 		widget->inflate();
 	}
 
-	void Widget::handleEvent(Event *e){
-		if(e->type == EventType::WindowResize){
+	void Widget::onEvent(EventListenerPtr listener){
+		eventListeners.push_back(listener);
+	}
+
+	void Widget::onMouseEvent(MouseEventListenerPtr listener){
+		mouseEventListeners.push_back(listener);
+	}
+
+	void Widget::onKeyEvent(KeyEventListenerPtr listener){
+		keyEventListeners.push_back(listener);
+	}
+
+	void Widget::handleEvent(Event &e){
+		if(e.type == EventType::WindowResize){
 			if(!parent){
 				// If this is the body widget, there will be no parent,
 				// and this widget will need to react to the window size
 				inflate();
 			}
 			int i = 0;
-			while(i < children.size() && !e->stopped){
+			while(i < children.size() && !e.stopped){
 				children[i]->handleEvent(e);
 				i++;
 			}
 		}
-		else if(e->type == EventType::Resize){
+		else if(e.type == EventType::Resize){
 			Event e(EventType::ParentResize);
 			for(int i = 0; i < children.size(); i++){
-				children[i]->handleEvent(&e);
+				children[i]->handleEvent(e);
 			}
 		}
-		else if(e->type == EventType::ParentResize){
+		else if(e.type == EventType::ParentResize){
 			inflate();
 		}
-		else if(e->type == EventType::MouseDown){
+		else if(e.type == EventType::MouseDown){
 			for(int i = 0; i < mouseEventListeners.size(); i++){
-				mouseEventListeners[i]->handle((MouseEvent*) e);
+				mouseEventListeners[i]->handle((MouseEvent&)e);
 			}	
+		}
+		else if(e.type == EventType::Key){
+			for(int i = 0; i < keyEventListeners.size(); i++){
+				keyEventListeners[i]->handle((KeyEvent&)e);
+			}
+			if(parent) parent->handleEvent(e);
 		}
 	}
 
@@ -933,10 +973,13 @@ namespace CW {
 		if(usedClip) clipShapes.pop_back();
 	}
 
-	void Widget::setLayoutManager(LayoutManager *newManager){
-		delete layoutManager;
+	void Widget::setLayoutManager(LayoutManagerPtr newManager){
 		layoutManager = newManager;
 		layoutManager->widget = this;
+	}
+
+	void Widget::focus(){
+		focusedWidget = this;
 	}
 
 	int Widget::shouldRender(){
@@ -955,26 +998,12 @@ namespace CW {
 		
 		Widget:
 
-		A ----------------------------- B
-		|                               |
-		|                               |
-		|                               |
-		|                               |
-		|                               |
-		C ----------------------------- D
+		A ------- B
+		|         |
+		|         |
+		C ------- D
 
-		First, check and make sure it is with the screen.
-		
-		It is NOT within the screen if:
-		
-		- Dy is less than 0
-		- Ay is greater than screen height
-		- Dx is less than 0
-		- Ax is greater than screen width
-
-		Then check for the same parameters, using the parent bounding box
-
-		Okay, now that it's in english, let's do it in c++ */
+		*/
 
 		int Dy = boundingBox.y + boundingBox.height;
 		int Ay = boundingBox.y;
@@ -1000,7 +1029,7 @@ namespace CW {
 	}
 
 	Grid::Grid(){
-		layoutManager = new GridLayoutManager();
+		layoutManager = std::make_shared<GridLayoutManager>();
 		layoutManager->widget = this;
 	}
 
@@ -1022,8 +1051,8 @@ namespace CW {
 		return 1;
 	}
 
-	void Grid::handleEvent(Event *e){
-		if(e->type == EventType::WindowResize){
+	void Grid::handleEvent(Event &e){
+		if(e.type == EventType::WindowResize){
 			// Just react to resize if this widget is the body
 			if(!parent){
 				inflate();
@@ -1071,9 +1100,9 @@ namespace CW {
 		text->parseLineBreaks(icoord(boundingBox.width, boundingBox.height));
 	}
 
-	void Button::handleEvent(Event *e){
+	void Button::handleEvent(Event &e){
 		Widget::handleEvent(e);
-		if(e->type == EventType::Resize){
+		if(e.type == EventType::Resize){
 			text->parseLineBreaks(icoord(boundingBox.width, boundingBox.height));
 		}
 	}
@@ -1158,6 +1187,14 @@ namespace CW {
 		stopped = 0;
 	}
 
+	Event::Event(const Event& otherEvent){
+		type = otherEvent.type;
+		x = otherEvent.x;
+		y = otherEvent.y;
+		stopped = otherEvent.stopped;
+		target = otherEvent.target;
+	}
+
 	void Event::stop(){
 		stopped = 1;
 	}
@@ -1216,6 +1253,6 @@ namespace CW {
 	Color BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE;
 	int fps, screenWidth, screenHeight, running, textInputMode = 0;
 	Widget *body, *focusedWidget = nullptr;
-	std::vector<Shape*> clipShapes;
+	std::vector<ShapePtr> clipShapes;
 
 }

@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <functional>
+#include <memory>
 
 namespace CW {
 
@@ -18,6 +19,7 @@ namespace CW {
 	void updateScreenSize();
 	void setBody(Widget*);
 	Widget* findEventTargetAt(int, int);
+	//void drawFocusBorder(Widget*); TODO
 
 	long sleep(long);
 
@@ -46,16 +48,18 @@ namespace CW {
 	struct Unit {
 		double value, derivedValue;
 		char type;
+		int isAuto;
 		Unit(); // Empty constructor
 		Unit(double, char);
 		virtual double derive(double); // Derive given max
-		void operator=(double); // Set value using =
 	};
 
+	typedef std::shared_ptr<Unit> UnitPtr;
+
 	struct CalculatedUnit : Unit {
-		Unit *u1, *u2;
+		UnitPtr u1, u2;
 		CalculatedUnit();
-		CalculatedUnit(Unit*, char, Unit*);
+		CalculatedUnit(UnitPtr, char, UnitPtr);
 		virtual double derive(double);
 	};
 
@@ -114,6 +118,33 @@ namespace CW {
 	struct RichText : Text {
 		// Future plans!
 	};
+		
+	enum EventType {
+		Resize,
+		WindowResize,
+		ParentResize,
+		Mouse,
+		MouseMove,
+		MouseDown,
+		MouseUp,
+		MouseClick,
+		Key,
+		Focus,
+		Blur,
+		Generic,
+		Invalid
+	};
+
+	// Lower level input structure
+	struct InputRecord {
+		InputRecord();
+		int input, empty;
+		EventType type;
+	};
+
+	namespace Input {
+		InputRecord read();
+	}
 
 	namespace Draw {
 		// Place a single character
@@ -135,20 +166,6 @@ namespace CW {
 
 	// Event system
 
-	enum EventType {
-		Resize,
-		WindowResize,
-		ParentResize,
-		Mouse,
-		MouseMove,
-		MouseDown,
-		MouseUp,
-		MouseClick,
-		Key,
-		Generic,
-		Invalid
-	};
-
 	struct Event {
 		EventType type;
 		int x, y;
@@ -156,6 +173,7 @@ namespace CW {
 		Event();
 		Event(EventType); // Generic-as-it-gets event
 		Event(EventType, int, int); // (Usually) EventType at position x, y
+		Event(const Event&);
 		void stop();
 		Widget *target = nullptr;
 	};
@@ -178,9 +196,9 @@ namespace CW {
 
 	// NOTE: The event system is likely to be re-written after some testing
 
-	typedef std::function<void(Event*)> EventHandler;
-	typedef std::function<void(MouseEvent*)> MouseEventHandler;
-	typedef std::function<void(KeyEvent*)> KeyEventHandler;
+	typedef std::function<void(Event&)> EventHandler;
+	typedef std::function<void(MouseEvent&)> MouseEventHandler;
+	typedef std::function<void(KeyEvent&)> KeyEventHandler;
 
 	struct EventListener {
 		EventHandler handle;
@@ -198,6 +216,9 @@ namespace CW {
 		EventType type  = EventType::Key;
 	};
 
+	typedef std::shared_ptr<EventListener> EventListenerPtr;
+	typedef std::shared_ptr<MouseEventListener> MouseEventListenerPtr;
+	typedef std::shared_ptr<KeyEventListener> KeyEventListenerPtr;
 
 	// Abstract class to describe shapes
 	struct Shape {
@@ -205,6 +226,8 @@ namespace CW {
 		virtual int contains(int, int) = 0;
 		virtual void setRect(const Box&) = 0;
 	};
+
+	typedef std::shared_ptr<Shape> ShapePtr;
 
 	// The most basic shape type
 	struct Rectangle : Shape {
@@ -217,6 +240,8 @@ namespace CW {
 		Widget* widget = nullptr;
 		virtual void render() = 0;
 	};
+
+	typedef std::shared_ptr<LayoutManager> LayoutManagerPtr;
 
 	// Basic layout manager, perhaps just a bit verbose. No, "self-documenting".
 	struct AbsoluteLayoutManager : LayoutManager {
@@ -273,46 +298,53 @@ namespace CW {
 		Box boundingBox;
 	};
 
+	typedef std::shared_ptr<ScrollBar> ScrollBarPtr;
+
 	struct Widget {
-		Unit *x, *y, *width, *height;
-		Shape *clipShape = nullptr;
+		UnitPtr x, y, width, height;
+		ShapePtr clipShape = nullptr;
 		int usedClip; // Boolean value: did this widget use a clip in the most recent render?
-		LayoutManager *layoutManager = nullptr;
+		LayoutManagerPtr layoutManager = nullptr;
 		int scrollX, maxScrollX, scrollY, maxScrollY;
-		ScrollBar *verticalScrollbar, *horizontalScrollBar;
+		ScrollBarPtr verticalScrollbar, horizontalScrollBar;
 		int xScrollDisabled = 1, yScrollDisabled = 1;
 		int cullChildren = 0, disableCulling = 0;
 		std::string name;
-		std::vector<EventListener*> eventListeners;
-		std::vector<MouseEventListener*> mouseEventListeners;
-		std::vector<KeyEventListener*> keyEventListeners;
+		std::vector<EventListenerPtr> eventListeners;
+		std::vector<MouseEventListenerPtr> mouseEventListeners;
+		std::vector<KeyEventListenerPtr> keyEventListeners;
+		Widget* parent;
+		Box boundingBox;
+		std::vector<Widget*> children;
+		ColorPair color;
 		Widget();
 		virtual int render();
 		virtual int render(const Box&);
 		virtual void inflate();
 		virtual void addChild(Widget*);
-		Widget* parent;
-		Box boundingBox;
-		std::vector<Widget*> children;
-		ColorPair color;
-		virtual void handleEvent(Event*);
+		virtual void onEvent(EventListenerPtr);
+		virtual void onMouseEvent(MouseEventListenerPtr);
+		virtual void onKeyEvent(KeyEventListenerPtr);
+		virtual void handleEvent(Event&);
 		virtual int contains(int, int);
-		// What will be the dimensions of the widget, given some hypothetical available space to render to?
-		virtual void setLayoutManager(LayoutManager*);
+		virtual void setLayoutManager(LayoutManagerPtr);
 		void clip();
 		void unclip();
-		int shouldRender();
+		void focus();
+		virtual int shouldRender();
 	};
 
+	typedef std::shared_ptr<GridLayoutManager> GridLayoutManagerPtr;
+
 	struct Grid : Widget {
-		GridLayoutManager *layoutManager = nullptr;
+		GridLayoutManagerPtr layoutManager = nullptr;
 		Grid();
 		virtual int render();
 		virtual int render(const Box&);
 		virtual void inflate();
 		virtual void addChild(Widget*);
 		virtual void addChild(Widget*, int, int);
-		virtual void handleEvent(Event*);
+		virtual void handleEvent(Event&);
 	};
 
 	struct Button : Widget {
@@ -321,7 +353,7 @@ namespace CW {
 		virtual int render();
 		virtual int render(const Box&);
 		virtual void inflate();
-		virtual void handleEvent(Event*);
+		virtual void handleEvent(Event&);
 	};
 
 	// TODO: make double buffered mode
@@ -332,7 +364,7 @@ namespace CW {
 		Canvas(int, int);
 		void size(int, int);
 		virtual int render();
-		virtual int render(const Box &);
+		virtual int render(const Box&);
 		virtual void inflate();
 		void clear();
 		void point(int, int, CharInfo);
@@ -345,7 +377,7 @@ namespace CW {
 	extern Color BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE;
 	extern int fps, screenWidth, screenHeight, running, textInputMode;
 	extern Widget *body, *focusedWidget;
-	extern std::vector<Shape*> clipShapes;
+	extern std::vector<ShapePtr> clipShapes;
 
 }
 

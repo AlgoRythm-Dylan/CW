@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+GREEN='\033[3;32m'
+RED='\033[0;31m'
+RESET='\033[0m'
+
+printf "====== Building test at `date` ======\n\n"
+if g++ CW.h CW.cpp test.cpp -lncurses -o test; then printf "${GREEN}BUILD SUCCEEDED${RESET}\n"
+else printf "${RED}BUILD FAILED${RESET}"
+fi
